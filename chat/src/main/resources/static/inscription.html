@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>S.A.T - Inscription</title>
+    <style>
+        body { background: #f0f2f5; color: #333; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #fff; padding: 40px; border-radius: 12px; width: 380px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #ddd; }
+        h2 { text-align: center; color: #1db954; margin-bottom: 25px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; background: #fff; color: #333; box-sizing: border-box; outline: none; }
+        button { width: 100%; padding: 12px; background: #1db954; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #17a34a; }
+        .link { text-align: center; margin-top: 15px; font-size: 14px; }
+        .link a { color: #1db954; text-decoration: none; font-weight: bold; }
+        #msg { text-align: center; padding: 10px; margin-top: 10px; border-radius: 5px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Créer un compte</h2>
+        
+        <div id="reg-ui">
+            <input type="text" id="fn" placeholder="Prénom">
+            <input type="text" id="ln" placeholder="Nom">
+            <input type="email" id="email" placeholder="Email (Gmail)">
+            <input type="password" id="pass" placeholder="Mot de passe">
+            <input type="password" id="conf" placeholder="Confirmer mot de passe">
+            <button onclick="handleRegister()">S'inscrire</button>
+            <div class="link">Déjà inscrit ? <a href="login.html">Se connecter</a></div>
+        </div>
+
+        <div id="verify-ui" style="display: none;">
+            <p style="text-align: center; color: #666;">Entrez le code envoyé à votre mail</p>
+            <input type="text" id="v-code" placeholder="Code (6 chiffres)">
+            <button onclick="handleVerify()">Vérifier mon compte</button>
+        </div>
+
+        <div id="msg"></div>
+    </div>
+
+    <script>
+        let savedEmail = "";
+
+        function showStatus(text, isError) {
+            const m = document.getElementById('msg');
+            m.style.display = "block";
+            m.innerText = text;
+            m.style.backgroundColor = isError ? "#ffebee" : "#e8f5e9";
+            m.style.color = isError ? "#c62828" : "#2e7d32";
+        }
+
+        async function handleRegister() {
+            savedEmail = document.getElementById('email').value;
+            const data = {
+                firstname: document.getElementById('fn').value,
+                lastname: document.getElementById('ln').value,
+                mail: savedEmail,
+                password: document.getElementById('pass').value,
+                confirme_password: document.getElementById('conf').value
+            };
+
+            try {
+                // تأكد من الـ URL والـ Port 8081
+                const res = await fetch('http://localhost:8081/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const txt = await res.text();
+                
+                if (txt.includes("SUCCESS")) {
+                    document.getElementById('reg-ui').style.display = 'none';
+                    document.getElementById('verify-ui').style.display = 'block';
+                    showStatus("Code envoyé ! Vérifiez votre boîte mail.", false);
+                } else {
+                    showStatus(txt, true);
+                }
+            } catch (err) {
+                showStatus("Erreur: Le serveur (Backend) ne répond pas !", true);
+            }
+        }
+
+        async function handleVerify() {
+            const code = document.getElementById('v-code').value;
+            try {
+                const res = await fetch(`http://localhost:8081/auth/verify?email=${encodeURIComponent(savedEmail)}&code=${code}`, {
+                    method: 'POST'
+                });
+                const txt = await res.text();
+                
+                if (txt.includes("Successfully")) {
+                    alert("Compte vérifié !");
+                    window.location.href = "login.html";
+                } else {
+                    showStatus(txt, true);
+                }
+            } catch (err) {
+                showStatus("Erreur de connexion", true);
+            }
+        }
+    </script>
+</body>
+</html>

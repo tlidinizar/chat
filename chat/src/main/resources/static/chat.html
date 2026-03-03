@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>S.A.T - Chat Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+	<style>
+	    :root { --green: #28a745; --border: #f1f5f9; }
+	    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #ffffff; display: flex; height: 100vh; }
+	    
+	    /* Sidebar */
+	    .sidebar { width: 280px; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: #fafafa; }
+	    .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); color: var(--green); font-weight: bold; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+	    #online-users-list { flex: 1; overflow-y: auto; }
+	    .user-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f0f0f0; cursor: default; background: white; }
+	    .status-dot { width: 10px; height: 10px; background: var(--green); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 4px rgba(40,167,69,0.4); }
+	    .user-name { font-size: 14px; font-weight: 500; color: #334155; text-transform: capitalize; }
+
+	    /* Main Chat */
+	    .chat-area { flex: 1; display: flex; flex-direction: column; }
+	    .chat-header { padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: white; }
+	    #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; background: #ffffff; }
+	    
+	    /* Message Bubbles */
+	    .msg { padding: 10px 15px; border-radius: 12px; max-width: 65%; font-size: 14px; line-height: 1.4; position: relative; }
+	    .me { align-self: flex-end; background: var(--green); color: white; border-bottom-right-radius: 2px; }
+	    .other { align-self: flex-start; background: #f1f5f9; color: #334155; border-bottom-left-radius: 2px; }
+
+	    /* --- التعديل النهائي: الاسم Noir و Gras جدا --- */
+	    .sender-label { 
+	        display: block !important; 
+	        font-size: 13px !important; 
+	        font-weight: 900 !important; /* Gras بزاف */
+	        margin-bottom: 4px !important; 
+	        text-transform: capitalize !important; 
+	        color: #000000 !important; /* اللون أسود صافي */
+	    }
+
+	    /* حيدنا الألوان القديمة باش يبقى الأسود هو اللي مسيطر */
+	    .me .sender-label, .other .sender-label { 
+	        color: #000000 !important; 
+	    }
+
+	    /* Input */
+	    .input-bar { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; background: white; }
+	    input { flex: 1; padding: 12px 15px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; }
+	    input:focus { border-color: var(--green); }
+	    button { background: var(--green); color: white; border: none; padding: 0 25px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+	    button:hover { background: #218838; }
+	</style>
+</head>
+<body onload="connect()">
+
+    <div class="sidebar">
+        <div class="sidebar-header">Utilisateurs en ligne</div>
+        <div id="online-users-list">
+            </div>
+    </div>
+
+    <div class="chat-area">
+        <div class="chat-header">
+            <strong id="room-title" style="color: #334155;">Global Chat</strong>
+            <span id="user-display-name" style="font-size: 12px; color: #64748b;"></span>
+        </div>
+
+        <div id="messages"></div>
+
+        <div class="input-bar">
+            <input type="text" id="msg-input" placeholder="Taper votre message..." autocomplete="off">
+            <button onclick="send()">Envoyer</button>
+        </div>
+    </div>
+
+	<script>
+	    let stompClient = null;
+	    let isConnected = false; // باش نعرفو واش ديجا ميكونيكطيين
+
+	    const currentUser = {
+	        email: localStorage.getItem('chatUser'),
+	        firstName: localStorage.getItem('userFirstName'), 
+	        lastName: localStorage.getItem('userLastName')
+	    };
+
+	    // عرض اسم المستخدم المتصل
+	    if (currentUser.firstName && currentUser.lastName) {
+	        document.getElementById('user-display-name').innerText = `Connecté : ${currentUser.firstName} ${currentUser.lastName}`;
+	    }
+
+	    function connect() {
+	        // 
+	        // حماية: إيلا كان ديجا كاين اتصال، ما تعاودش واحد آخر
+	        if (stompClient !== null && isConnected) {
+	            console.log("Déjà connecté, tentative annulée.");
+	            return;
+	        }
+
+	        const socket = new SockJS('http://localhost:8081/ws-chat');
+	        stompClient = Stomp.over(socket);
+
+	        // تعطيل الـ Logs المزعجة فـ Console (اختياري)
+	        // stompClient.debug = null;
+
+	        const connectHeaders = {
+	            'login': currentUser.email,
+	            'firstName': currentUser.firstName,
+	            'lastName': currentUser.lastName
+	        };
+
+	        stompClient.connect(connectHeaders, function (frame) {
+	            isConnected = true;
+	            console.log('Connected: ' + frame);
+
+	            // 1. استقبال قائمة المستخدمين
+	            stompClient.subscribe('/topic/online-users', function (response) {
+	                const users = JSON.parse(response.body);
+	                updateOnlineList(users); 
+	            });
+
+	            // 2. استقبال الرسائل
+	            stompClient.subscribe('/topic/messages', function (message) {
+	                showMsg(JSON.parse(message.body));
+	            });
+				
+				stompClient.send("/app/getOnlineUsers", {}, {});/////////////////////////////////////////////////////////
+	        }, function (error) {
+	            isConnected = false;
+	            console.error("STOMP error", error);
+	            // محاولة إعادة الاتصال بعد 5 ثواني إيلا طاح السيرفر
+	            setTimeout(connect, 5000);
+	        });
+	    }
+
+	    function send() {
+	        const messageInput = document.getElementById('msg-input');
+	        
+	        if (messageInput.value.trim() !== '' && stompClient && isConnected) {
+	            const chatMessage = {
+	                senderEmail: currentUser.email,
+	                firstName: currentUser.firstName,  
+	                lastName: currentUser.lastName,   
+	                content: messageInput.value,
+	                timestamp: new Date()
+	            };
+
+	            stompClient.send("/app/sendMessage", {}, JSON.stringify(chatMessage));
+	            messageInput.value = '';
+	        }
+	    }
+
+	    function showMsg(data) {
+	        const area = document.getElementById('messages');
+	        const isMe = data.senderEmail === currentUser.email;
+	        
+	        // 
+	        const html = `
+	            <div class="msg ${isMe ? 'me' : 'other'}">
+	                <span style="display: block; color: #000; font-weight: 900; font-size: 13px; margin-bottom: 4px; text-transform: capitalize;">
+	                    ${data.firstName} ${data.lastName} 
+	                </span>
+	                <div class="text">${data.content}</div>
+	            </div>`;
+	        
+	        area.innerHTML += html;
+	        area.scrollTop = area.scrollHeight; 
+	    }
+
+	    function updateOnlineList(fullNames) {
+	        const list = document.getElementById('online-users-list');
+	        list.innerHTML = ''; 
+	        
+	        // إزالة التكرار إيلا صيفط السيرفر سميات معاودين
+	        const uniqueNames = [...new Set(fullNames)];
+
+	        uniqueNames.forEach(name => {
+	            // تقدر تخبي سميتك من القائمة إيلا بغيتي
+	            // if (name === `${currentUser.firstName} ${currentUser.lastName}`) return;
+
+	            list.innerHTML += `
+	                <div class="user-item">
+	                    <div class="status-dot"></div>
+	                    <span class="user-name" style="text-transform: capitalize;">${name}</span>
+	                </div>`;
+	        });
+	    }
+
+	    document.getElementById("msg-input").addEventListener("keypress", (e) => { 
+	        if(e.key === "Enter") send(); 
+	    });
+
+	    // شعل الكونيكسيون ملي تحل الصفحة
+	    connect();
+	</script>
+</body>
+</html>
