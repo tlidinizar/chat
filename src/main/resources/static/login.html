@@ -2,23 +2,143 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>S.A.T - Login</title>
+    <title>S.A.T - System Access</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background: #f0f2f5; color: #333; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: #fff; padding: 40px; border-radius: 12px; width: 380px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #ddd; }
-        h2 { text-align: center; color: #1db954; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; outline: none; }
-        button { width: 100%; padding: 12px; background: #1db954; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        :root {
+            --p-yellow: #ffcc00;
+            --p-black: #1a1a1a;
+            --bg-white: #ffffff;
+            --input-bg: #f8fafc;
+            --border: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { 
+            background-color: var(--bg-white); 
+            color: var(--text-dark); 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0;
+            /* الشبكة الهندسية في الخلفية */
+            background-image: radial-gradient(var(--border) 1px, transparent 0);
+            background-size: 30px 30px;
+        }
+
+        .box { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 24px; 
+            width: 380px; 
+            border: 1px solid var(--border); 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 35px;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            background: var(--p-yellow);
+            padding: 2px 10px;
+            border-radius: 6px;
+            margin-right: 5px;
+        }
+
+        h2 { 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            color: var(--text-muted); 
+            margin-bottom: 25px; 
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .field { margin-bottom: 20px; }
+
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border); 
+            background: var(--input-bg); 
+            color: var(--text-dark); 
+            outline: none; 
+            font-family: 'Inter', sans-serif;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--p-yellow);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.1);
+        }
+
+        button { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--p-black); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer; 
+            transition: 0.3s;
+            margin-top: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            background: #333;
+        }
+
+        .footer { 
+            text-align: center; 
+            margin-top: 25px; 
+            font-size: 13px; 
+            color: var(--text-muted); 
+        }
+
+        .footer a { 
+            color: var(--p-black); 
+            text-decoration: none; 
+            font-weight: 700; 
+            border-bottom: 2px solid var(--p-yellow);
+        }
     </style>
 </head>
 <body>
     <div class="box">
-        <h2>Connexion</h2>
-        <input type="email" id="l-email" placeholder="Email" required>
-    <input type="password" id="l-pass" placeholder="Mot de passe" required>
-        <button onclick="handleLogin()">Se connecter</button>
-        <div style="text-align: center; margin-top: 15px;">
-            <a href="inscription.html" style="color: #1db954; text-decoration: none; font-size: 14px;">Créer un compte</a>
+        <div class="logo"><span>S.A.T</span> NODE</div>
+        
+        <h2>Establish_Secure_Session</h2>
+        
+        <div class="field">
+            <input type="email" id="l-email" placeholder="Operator_Email" required>
+        </div>
+        <div class="field">
+            <input type="password" id="l-pass" placeholder="Security_Password" required>
+        </div>
+        
+        <button onclick="handleLogin()">AUTHENTICATE</button>
+        
+        <div class="footer">
+            New operator? <a href="inscription.html">Register_Node</a>
         </div>
     </div>
 
@@ -28,7 +148,7 @@
         const password = document.getElementById('l-pass').value;
 
         if (!email || !password) {
-            alert("Veuillez remplir tous les champs");
+            alert("REQUIRED: Enter credentials");
             return;
         }
 
@@ -46,29 +166,25 @@
 
             if (res.ok) {
                 const userFromDB = await res.json(); 
-                console.log("Data received from DB:", userFromDB); // باش تشوف فـ Console شنو وصل
+                console.log("Data received from DB:", userFromDB);
 
-                /* Correction الحروف:
-                   كنجربو كاع الاحتمالات (صغار، كبار، و أول حرف كبير) 
-                   باش ما يبقاش يطلع ليك undefined
-                */
+                // Logic ديالك باش نتفاداو undefined
                 const fName = userFromDB.firstName || userFromDB.firstname || userFromDB.FIRSTNAME;
                 const lName = userFromDB.lastName || userFromDB.lastname || userFromDB.LASTNAME;
                 const uMail = userFromDB.mail || userFromDB.MAIL;
 
-                // تخزين المعلومات في localStorage
+                // Storage
                 localStorage.setItem('userFirstName', fName);
                 localStorage.setItem('userLastName', lName);
                 localStorage.setItem('chatUser', uMail);
                 
-                console.log("Storage success:", fName, lName);
                 window.location.href = "chat.html"; 
             } else { 
-                alert("Email ou Mot de passe incorrect !"); 
+                alert("ACCESS_DENIED: Invalid credentials"); 
             }
         } catch (error) {
             console.error("Erreur:", error);
-            alert("Problème de connexion au serveur");
+            alert("CRITICAL_ERROR: Backend unreachable");
         }
     }
 

@@ -5,263 +5,277 @@
     <title>S.A.T - Global Chat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --green:      #28a745;
-            --green-dark: #218838;
-            --border:     #e2e8f0;
-            --text:       #334155;
+            --p-yellow: #ffcc00;
+            --p-grey: #475569; /* اللون الرمادي الاحترافي */
+            --bg-main: #ffffff;
+            --sidebar-bg: #f8fafc;
+            --border: #e2e8f0;
+            --text-dark: #1e293b;
             --text-muted: #64748b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Inter', sans-serif;
             display: flex;
             height: 100vh;
-            background: #f4f7f6;
+            background: var(--bg-main);
+            color: var(--text-dark);
+            background-image: radial-gradient(var(--border) 1px, transparent 0);
+            background-size: 30px 30px;
         }
 
         /* ── Sidebar ── */
         .sidebar {
-            width: 280px;
+            width: 300px;
             background: white;
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            flex-shrink: 0;
+            z-index: 10;
         }
 
         .sidebar-header {
-            padding: 18px 20px;
-            background: var(--green);
-            color: white;
-            font-weight: bold;
-            font-size: 15px;
-        }
-
-        #online-users-list { flex: 1; overflow-y: auto; }
-
-        .user-item {
-            padding: 13px 18px;
-            border-bottom: 1px solid #f1f5f9;
-            cursor: pointer;
+            padding: 24px;
+            background: var(--p-grey); 
+            color: var(--p-yellow);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 1px;
             display: flex;
             align-items: center;
             gap: 10px;
-            transition: background 0.15s;
-        }
-        .user-item:hover { background: #f8fafc; }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            flex-shrink: 0;
-            background: var(--green);
-            border-radius: 50%;
         }
 
-        .user-name {
-            flex: 1;
-            font-size: 14px;
-            color: var(--text);
-            text-transform: capitalize;
+        .sidebar-header span {
+            background: var(--p-yellow);
+            color: var(--p-grey);
+            padding: 2px 6px;
+            border-radius: 4px;
         }
 
-        .badge {
-            display: none;
-            background: var(--green);
-            color: white;
-            border-radius: 50%;
-            min-width: 20px;
-            height: 20px;
-            font-size: 11px;
-            font-weight: bold;
-            align-items: center;
-            justify-content: center;
-            padding: 0 5px;
-        }
-        .badge.visible { display: flex; }
+        #online-users-list { flex: 1; overflow-y: auto; padding: 15px; }
 
-        /* ── Zone de chat ── */
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
+        .user-item { 
+            padding: 12px 16px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            transition: 0.2s; 
+            margin-bottom: 6px;
+            border: 1px solid transparent;
+        }
+        .user-item:hover { 
+            background: var(--sidebar-bg); 
+            border-color: var(--border);
         }
 
-        .chat-header {
-            padding: 16px 24px;
-            background: white;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            color: var(--text);
+        .status-dot { 
+            width: 8px; 
+            height: 8px; 
+            background: #10b981; 
+            border-radius: 50%; 
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); 
+        }
+
+        /* ── Main Chat Area ── */
+        .chat-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            background: rgba(255, 255, 255, 0.8); 
+            backdrop-filter: blur(4px); 
+        }
+
+        .chat-header { 
+            padding: 20px 30px; 
+            background: white; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        .chat-header .title {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            letter-spacing: 1px;
         }
 
         #user-display-name {
+            font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
-            color: var(--text-muted);
-            font-weight: normal;
+            background: var(--sidebar-bg);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
         }
 
-        #messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+        #messages { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 15px; }
+
+        /* ── Message Bubbles ── */
+        .msg { 
+            padding: 12px 18px; 
+            border-radius: 16px; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            position: relative; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02); 
         }
 
-        /* ── Groupes de messages ── */
-        .msg-group {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            max-width: 65%;
+        .msg-group { display: flex; flex-direction: column; max-width: 70%; }
+        .msg-group.me { align-self: flex-end; align-items: flex-end; }
+        .msg-group.other { align-self: flex-start; align-items: flex-start; }
+
+        .msg-group.me .msg { 
+            background: var(--p-grey); 
+            color: white; 
+            border-bottom-right-radius: 4px; 
         }
-        .msg-group.me    { align-self: flex-end; }
-        .msg-group.other { align-self: flex-start; }
 
-        .msg {
-            padding: 9px 14px;
-            border-radius: 12px;
-            font-size: 14px;
-            line-height: 1.45;
-            word-break: break-word;
+        .msg-group.other .msg { 
+            background: white; 
+            border: 1px solid var(--border); 
+            color: var(--text-dark);
+            border-bottom-left-radius: 4px; 
         }
-        .msg-group.me    .msg { background: var(--green); color: white; border-bottom-right-radius: 2px; }
-        .msg-group.other .msg { background: white; border: 1px solid var(--border); border-bottom-left-radius: 2px; }
 
-        /* Nom à l'intérieur de la bulle */
-        .sender-label {
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: capitalize;
-            margin-bottom: 3px;
-            color: white;
+        .sender-label { 
+            font-size: 11px; 
+            font-weight: 700; 
+            margin-bottom: 4px; 
+            color: var(--text-muted); 
+            font-family: 'JetBrains Mono', monospace; 
         }
-        .msg-group.other .sender-label { color: #000; }
 
-        .deleted-msg { font-style: italic; color: #a0aec0 !important; }
-        .edited-tag  { font-size: 10px; opacity: 0.65; margin-left: 4px; }
+        .deleted-msg { font-style: italic; opacity: 0.7; }
+        .edited-tag { font-size: 10px; margin-left: 5px; opacity: 0.6; }
 
-        .msg-actions { margin-top: 4px; display: flex; gap: 5px; justify-content: flex-end; }
-
+        .msg-actions { margin-top: 4px; display: flex; gap: 8px; }
         .msg-actions button {
             background: none;
-            border: 1px solid rgba(255,255,255,0.55);
-            color: white;
-            padding: 2px 9px;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
             font-size: 10px;
+            padding: 2px 8px;
             border-radius: 4px;
             cursor: pointer;
-            opacity: 0.8;
-            transition: opacity 0.15s;
+            font-family: 'JetBrains Mono';
+            transition: 0.2s;
         }
-        .msg-actions button:hover { opacity: 1; background: none; }
-        .msg-group.other .msg-actions button { color: var(--text); border-color: #cbd5e1; }
+        .msg-actions button:hover { background: var(--p-grey); color: white; }
 
-        /* ── Barre de saisie ── */
+        /* ── Input Bar ── */
         .input-bar {
-            padding: 16px 20px;
+            padding: 20px 30px;
             background: white;
             border-top: 1px solid var(--border);
             display: flex;
-            gap: 10px;
+            gap: 15px;
             align-items: center;
         }
 
         #msg-input {
             flex: 1;
-            padding: 11px 15px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
+            padding: 14px 20px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
             outline: none;
-            font-size: 14px;
-            font-family: inherit;
-            transition: border-color 0.2s;
+            background: var(--sidebar-bg);
+            transition: 0.2s;
         }
-        #msg-input:focus { border-color: var(--green); }
+        #msg-input:focus { border-color: var(--p-grey); background: white; }
 
         #send-btn {
-            background: var(--green);
-            color: white;
+            background: var(--p-grey); 
+            color: var(--p-yellow);
             border: none;
-            padding: 11px 26px;
-            border-radius: 8px;
+            padding: 0 30px;
+            height: 48px;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            white-space: nowrap;
-            transition: background 0.2s;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            transition: 0.3s;
         }
-        #send-btn:hover { background: var(--green-dark); }
+        #send-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(71, 85, 105, 0.2); 
+        }
 
-        /* ── Cloche notification ── */
+        /* ── Notifications ── */
         #notif-container {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            cursor: pointer;
+            bottom: 30px;
+            left: 30px;
+            background: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
             display: none;
-            z-index: 1000;
-            animation: shake 0.6s infinite;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 100;
+            border: 1px solid var(--border);
         }
+
         #notif-badge {
-            background: red;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 7px;
-            font-size: 11px;
+            position: absolute; 
+            top: -5px; 
+            right: -5px; 
+            background: var(--p-grey); 
+            color: white; 
+            border-radius: 50%; 
+            padding: 2px 6px; 
+            font-size: 10px; 
             font-weight: bold;
-            position: absolute;
-            top: -5px;
-            right: -5px;
-        }
-        @keyframes shake {
-            0%, 50%, 100% { transform: rotate(0deg); }
-            25%            { transform: rotate(10deg); }
-            75%            { transform: rotate(-10deg); }
         }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="sidebar-header">Utilisateurs en ligne</div>
+        <div class="sidebar-header">
+            <span>NODE</span> ACTIVE_USERS
+        </div>
         <div id="online-users-list"></div>
     </div>
 
     <div class="chat-area">
         <div class="chat-header">
-            <span>Global Chat — <span id="user-display-name"></span></span>
+            <div class="title">GLOBAL_COMM_CHANNEL</div>
+            <span id="user-display-name">ID: Loading...</span>
         </div>
+        
         <div id="messages"></div>
+
         <div class="input-bar">
-            <input type="text" id="msg-input" placeholder="Écrire un message..." autocomplete="off">
-            <button id="send-btn" onclick="send()">Envoyer</button>
+            <input type="text" id="msg-input" placeholder="Type_Secure_Message..." autocomplete="off">
+            <button id="send-btn" onclick="send()">PUSH_DATA</button>
         </div>
     </div>
 
     <div id="notif-container" onclick="goToPrivate()">
         <span id="notif-badge">0</span>
-        <span style="font-size:24px;">🔔</span>
+        <span style="font-size:20px;">🔔</span>
     </div>
 
     <script>
+        // --- Logic كيبقى هو هو باش ما يتخربقش الربط مع الباكيند ---
         let stompClient   = null;
         let privateClient = null;
         let lastSenderName = "";
         const unreadCounts = {};
         let totalUnread = 0;
-
         let lastRenderedSender = null;
         let lastRenderedGroup  = null;
 
@@ -272,210 +286,125 @@
         };
         const myFullName = `${currentUser.firstName} ${currentUser.lastName}`.trim();
 
-        document.getElementById('user-display-name').innerText = myFullName || "Utilisateur";
+        document.getElementById('user-display-name').innerText = `ID: ${myFullName || "Unknown_Operator"}`;
 
-        // ─────────────────────────────────────────────────────────────
-        // Connexion WebSocket
-        // ─────────────────────────────────────────────────────────────
         function connect() {
-            const headers = {
-                login:     currentUser.email,
-                firstName: currentUser.firstName,
-                lastName:  currentUser.lastName
-            };
-
+            const headers = { login: currentUser.email, firstName: currentUser.firstName, lastName: currentUser.lastName };
             const socket = new SockJS('http://localhost:8081/ws-chat');
             stompClient = Stomp.over(socket);
             stompClient.debug = null;
 
             stompClient.connect(headers, () => {
-                stompClient.subscribe('/topic/online-users', (res) => {
-                    updateOnlineList(JSON.parse(res.body));
-                });
-                stompClient.subscribe('/topic/messages', (msg) => {
-                    showMsg(JSON.parse(msg.body));
-                });
+                stompClient.subscribe('/topic/online-users', (res) => updateOnlineList(JSON.parse(res.body)));
+                stompClient.subscribe('/topic/messages', (msg) => showMsg(JSON.parse(msg.body)));
                 stompClient.send("/app/getOnlineUsers", {}, {});
             }, () => setTimeout(connect, 5000));
 
             const wsPrivate = new SockJS('http://localhost:8081/ws-chat?name=' + encodeURIComponent(myFullName));
             privateClient = Stomp.over(wsPrivate);
             privateClient.debug = null;
-
             privateClient.connect(headers, () => {
                 privateClient.subscribe('/user/queue/notifications', (frame) => {
-                    const parts  = frame.body.split('|');
-                    const sender = parts[1]
-                        ? parts[1].trim()
-                        : parts[0].replace('Nouveau message de ', '').trim();
-
+                    const parts = frame.body.split('|');
+                    const sender = parts[1] ? parts[1].trim() : parts[0].replace('Nouveau message de ', '').trim();
                     unreadCounts[sender] = (unreadCounts[sender] || 0) + 1;
                     updateBadge(sender);
                     lastSenderName = sender;
-
                     totalUnread++;
-                    document.getElementById('notif-container').style.display = 'block';
-                    document.getElementById('notif-badge').innerText = totalUnread > 99 ? '99+' : totalUnread;
+                    document.getElementById('notif-container').style.display = 'flex';
+                    document.getElementById('notif-badge').innerText = totalUnread;
                 });
             });
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // Envoi d'un message
-        // ─────────────────────────────────────────────────────────────
         function send() {
             const input = document.getElementById('msg-input');
             if (!input.value.trim() || !stompClient) return;
-
             stompClient.send("/app/sendMessage", {}, JSON.stringify({
-                sender:    myFullName,
-                firstName: currentUser.firstName,
-                lastName:  currentUser.lastName,
-                content:   input.value.trim(),
-                type:      'CHAT',
-                timestamp: new Date()
+                sender: myFullName, firstName: currentUser.firstName, lastName: currentUser.lastName,
+                content: input.value.trim(), type: 'CHAT', timestamp: new Date()
             }));
             input.value = "";
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // Affichage — nom à l'intérieur de chaque bulle
-        // ─────────────────────────────────────────────────────────────
         function showMsg(data) {
-            const area      = document.getElementById('messages');
-            const isMe      = data.sender === myFullName;
-            const side      = isMe ? 'me' : 'other';
+            const area = document.getElementById('messages');
+            const isMe = data.sender === myFullName;
+            const side = isMe ? 'me' : 'other';
             const senderKey = data.sender || `${data.firstName} ${data.lastName}`;
 
-            // Mise à jour bulle existante (edit / delete)
             const existingBubble = document.getElementById('bubble-' + data.id);
             if (existingBubble) {
-                existingBubble.innerHTML = buildBubbleInner(data, isMe);
+                existingBubble.querySelector('.content-text').innerHTML = data.deleted ? 
+                    '<span class="deleted-msg">Message_Deleted_By_User</span>' : 
+                    `${data.content}${data.edited ? '<span class="edited-tag">(edited)</span>' : ''}`;
                 return;
             }
 
-            // Réutiliser le groupe si même expéditeur à la suite
-            let group = lastRenderedGroup;
-            if (!group || lastRenderedSender !== senderKey) {
-                group = document.createElement('div');
-                group.className = `msg-group ${side}`;
-                area.appendChild(group);
+            if (lastRenderedSender !== senderKey) {
+                lastRenderedGroup = document.createElement('div');
+                lastRenderedGroup.className = `msg-group ${side}`;
+                if (!isMe) lastRenderedGroup.innerHTML = `<span class="sender-label">${senderKey}</span>`;
+                area.appendChild(lastRenderedGroup);
                 lastRenderedSender = senderKey;
-                lastRenderedGroup  = group;
             }
 
-            const bubble = document.createElement('div');
-            bubble.id        = 'bubble-' + data.id;
-            bubble.className = 'msg';
-            bubble.innerHTML = buildBubbleInner(data, isMe);
-            group.appendChild(bubble);
+            const bubbleWrap = document.createElement('div');
+            bubbleWrap.style.display = "flex";
+            bubbleWrap.style.flexDirection = "column";
+            bubbleWrap.style.alignItems = isMe ? "flex-end" : "flex-start";
 
+            const bubble = document.createElement('div');
+            bubble.id = 'bubble-' + data.id;
+            bubble.className = 'msg';
+            bubble.innerHTML = `<div class="content-text">${data.deleted ? '<span class="deleted-msg">Message_Deleted_By_User</span>' : data.content + (data.edited ? '<span class="edited-tag">(edited)</span>' : '')}</div>`;
+            
+            bubbleWrap.appendChild(bubble);
+
+            if (isMe && !data.deleted) {
+                const actions = document.createElement('div');
+                actions.className = 'msg-actions';
+                actions.innerHTML = `<button onclick="promptEdit(${data.id}, '${data.content.replace(/'/g, "\\'")}')">Edit</button>
+                                     <button onclick="sendDelete(${data.id})">Delete</button>`;
+                bubbleWrap.appendChild(actions);
+            }
+
+            lastRenderedGroup.appendChild(bubbleWrap);
             area.scrollTop = area.scrollHeight;
         }
 
-        function buildBubbleInner(data, isMe) {
-            if (data.deleted) {
-                return `
-                    <span class="sender-label">${data.firstName} ${data.lastName}</span>
-                    <span class="deleted-msg">Ce message a été supprimé</span>`;
-            }
-
-            let html = `
-                <span class="sender-label">${data.firstName} ${data.lastName}</span>
-                <div>${data.content}${data.edited ? '<span class="edited-tag">(édité)</span>' : ''}</div>`;
-
-            if (isMe) {
-                const diffMins = (Date.now() - new Date(data.timestamp).getTime()) / 60000;
-                if (diffMins < 20) {
-                    html += `
-                        <div class="msg-actions">
-                            <button onclick="promptEdit(${data.id}, '${data.content.replace(/'/g, "\\'")}')">Modifier</button>
-                            <button onclick="sendDelete(${data.id})">Supprimer</button>
-                        </div>`;
-                }
-            }
-            return html;
-        }
-
-        // ─────────────────────────────────────────────────────────────
-        // Modifier / Supprimer
-        // ─────────────────────────────────────────────────────────────
         function promptEdit(id, oldContent) {
-            const newContent = prompt("Modifier le message :", oldContent);
-            if (newContent !== null && newContent.trim() && newContent !== oldContent) {
-                stompClient.send("/app/editMessage", {}, JSON.stringify({
-                    id:      id.toString(),
-                    content: newContent.trim(),
-                    sender:  myFullName
-                }));
+            const newContent = prompt("Update Command:", oldContent);
+            if (newContent && newContent.trim() !== oldContent) {
+                stompClient.send("/app/editMessage", {}, JSON.stringify({ id: id.toString(), content: newContent.trim(), sender: myFullName }));
             }
         }
 
         function sendDelete(id) {
-            if (!confirm("Voulez-vous vraiment supprimer ce message ?")) return;
-            stompClient.send("/app/deleteMessage", {}, JSON.stringify({
-                id:     id.toString(),
-                sender: myFullName
-            }));
+            if (confirm("Confirm_Deletion?")) {
+                stompClient.send("/app/deleteMessage", {}, JSON.stringify({ id: id.toString(), sender: myFullName }));
+            }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // Liste utilisateurs en ligne
-        // ─────────────────────────────────────────────────────────────
         function updateOnlineList(fullNames) {
             const list = document.getElementById('online-users-list');
             list.innerHTML = '';
-
-            [...new Set(fullNames)]
-                .filter(name => name !== myFullName)
-                .forEach(name => {
-                    const div = document.createElement('div');
-                    div.className = 'user-item';
-                    div.id        = 'user-' + name.replace(/\s+/g, '-');
-                    div.onclick   = () => openPrivateChat(name);
-                    div.innerHTML = `
-                        <div class="status-dot"></div>
-                        <span class="user-name">${name}</span>
-                        <span class="badge" id="badge-${name.replace(/\s+/g, '-')}"></span>`;
-                    list.appendChild(div);
-
-                    if (unreadCounts[name] > 0) updateBadge(name);
-                });
+            [...new Set(fullNames)].filter(name => name !== myFullName).forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                div.onclick = () => openPrivateChat(name);
+                div.innerHTML = `<div class="status-dot"></div><span class="user-name">${name}</span>`;
+                list.appendChild(div);
+            });
         }
 
         function openPrivateChat(name) {
-            totalUnread = Math.max(0, totalUnread - (unreadCounts[name] || 0));
-            unreadCounts[name] = 0;
-            updateBadge(name);
-
-            if (totalUnread === 0) {
-                document.getElementById('notif-container').style.display = 'none';
-            } else {
-                document.getElementById('notif-badge').innerText = totalUnread;
-            }
-
             window.location.href = `chat_private.html?name=${encodeURIComponent(name)}`;
         }
 
-        function updateBadge(senderName) {
-            const badge = document.getElementById('badge-' + senderName.replace(/\s+/g, '-'));
-            if (!badge) return;
-            const count = unreadCounts[senderName] || 0;
-            badge.innerText = count > 99 ? '99+' : count || '';
-            badge.classList.toggle('visible', count > 0);
-        }
+        function goToPrivate() { if (lastSenderName) openPrivateChat(lastSenderName); }
 
-        function goToPrivate() {
-            if (lastSenderName) openPrivateChat(lastSenderName);
-        }
-
-        // ─────────────────────────────────────────────────────────────
-        // Init
-        // ─────────────────────────────────────────────────────────────
-        document.getElementById("msg-input").addEventListener("keypress", (e) => {
-            if (e.key === "Enter") { e.preventDefault(); send(); }
-        });
-
+        document.getElementById("msg-input").addEventListener("keypress", (e) => { if (e.key === "Enter") send(); });
         connect();
     </script>
 </body>
