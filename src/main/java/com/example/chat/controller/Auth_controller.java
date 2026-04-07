@@ -27,21 +27,7 @@ public class Auth_controller {
 	        return users_service.verifyAccount(email, code);
 	    }
 	    
-	  /*  @PostMapping("/login")
-	    public ResponseEntity<?> simpleLogin(@RequestBody Users_entity user) {
-	        // استعمل getMail() عوض السمية والكنية
-	        boolean isValid = users_service.checkSimpleLogin(
-	            user.getMail(), 
-	            user.getPassword()
-	        );
-	        
-	        if (isValid) {
-	            return ResponseEntity.ok("Success");
-	        } else {
-	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	                                 .body("Email ou Mot de passe incorrect!");
-	        }
-	   */
+	  
 	    
 	    @PostMapping("/login")
 	    public ResponseEntity<?> login(@RequestBody Users_entity user) {
