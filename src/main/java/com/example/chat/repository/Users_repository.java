@@ -33,5 +33,5 @@ public interface Users_repository extends JpaRepository<Users_entity, Long> {
 
 	List<Users_entity> findByEnabledFalse();
 
-
+	    
 }

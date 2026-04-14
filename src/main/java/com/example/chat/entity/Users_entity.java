@@ -44,12 +44,23 @@ public class Users_entity {
     
     public String role = "USER";
     		
-    private boolean enabled;
+    public boolean enabled;
+    
+    @Column(name = "avatar_url", columnDefinition = "TEXT")
+    public String avatar_Url;
     
     
 		
 
-    public boolean isEnabled() {
+    public String getAvatar_url() {
+		return avatar_Url;
+	}
+
+	public void setAvatar_url(String avatar_url) {
+		this.avatar_Url = avatar_url;
+	}
+
+	public boolean isEnabled() {
         return enabled;	
     }
 
@@ -125,6 +136,8 @@ public class Users_entity {
 	public void setVerification_Code(String verification_Code) {
 		this.verification_Code = verification_Code;
 	}
+
+	
 
 
 

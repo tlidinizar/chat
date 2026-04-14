@@ -6,6 +6,7 @@ import com.example.chat.repository.Users_repository;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,7 +122,99 @@ public class Users_service {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         users_repository.delete(user);
     }
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+    /**
+     * جلب مستخدم بالـ ID
+     */
+    public Optional<Users_entity> getUserById(Long id) {
+        return users_repository.findById(id);
+    }
+    
+    /**
+     * جلب مستخدم بالإيميل
+     */
+    public Optional<Users_entity> getUserByEmail(String email) {
+        return users_repository.findByMail(email);
+    }
+    
+    /**
+     * تحديث جزئي - فقط الحقول اللي موجودة فـ Map
+     * المستخدم يقدر يحدّث حقل واحد أو عدة حقول بدون ما يملأ الكل
+     */
+    @Transactional
+    public Users_entity partialUpdate(Long userId, Map<String, Object> updates) throws Exception {
+        Users_entity user = users_repository.findById(userId)
+            .orElseThrow(() -> new Exception("Utilisateur non trouvé"));
+        
+        // تحديث الاسم الشخصي
+        if (updates.containsKey("firstName")) {
+            String firstName = (String) updates.get("firstName");
+            if (firstName != null && !firstName.trim().isEmpty()) {
+                user.setFirstname(firstName.trim());
+            }
+        }
+        
+        // تحديث اسم العائلة
+        if (updates.containsKey("lastName")) {
+            String lastName = (String) updates.get("lastName");
+            if (lastName != null && !lastName.trim().isEmpty()) {
+                user.setLastname(lastName.trim());
+            }
+        }
+        
+        // تحديث الإيميل (مع التحقق من عدم التكرار)
+        if (updates.containsKey("email")) {
+            String email = (String) updates.get("email");
+            if (email != null && !email.trim().isEmpty()) {
+                if (!user.getMail().equals(email)) {
+                    Optional<Users_entity> existingUser = users_repository.findByMail(email);
+                    if (existingUser.isPresent()) {
+                        throw new Exception("Cet email est déjà utilisé");
+                    }
+                }
+                user.setMail(email.trim());
+            }
+        }
+        
+        // تحديث كلمة السر (بدون تشفير - عادية)
+        if (updates.containsKey("password")) {
+            String password = (String) updates.get("password");
+            if (password != null && !password.trim().isEmpty()) {
+                user.setPassword(password.trim());
+            }
+        }
+        
+        // تحديث الصورة
+        if (updates.containsKey("avatarUrl")) {
+            String avatarUrl = (String) updates.get("avatarUrl");
+            user.setAvatar_url(avatarUrl != null ? avatarUrl.trim() : null);
+        }
+        
+        return users_repository.save(user);
+    }
+    
+    /**
+     * تحديث الصورة فقط
+     */
+    @Transactional
+    public Users_entity updateAvatar(Long userId, String avatarUrl) throws Exception {
+        Users_entity user = users_repository.findById(userId)
+            .orElseThrow(() -> new Exception("Utilisateur non trouvé"));
+        
+        user.setAvatar_url(avatarUrl);
+        return users_repository.save(user);
+    }
+    
+    /**
+     * التحقق إذا كان الإيميل موجود
+     */
+    public Optional<Users_entity> mailExists(String mail) {
+        return users_repository.findByMail(mail);
+    }
 }
+
         
         
         

@@ -16,6 +16,7 @@
             --text-dark: #1e293b;
             --text-muted: #64748b;
             --danger: #dc2626;
+            --success: #10b981;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,7 +31,6 @@
             background-size: 30px 30px;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 300px;
             background: white;
@@ -111,7 +111,6 @@
             text-align: center;
         }
 
-        /* Sidebar Footer */
         .sidebar-footer {
             padding: 15px;
             border-top: 1px solid var(--border);
@@ -152,7 +151,6 @@
             transform: translateY(-2px);
         }
 
-        /* Main Chat Area */
         .chat-area { 
             flex: 1; 
             display: flex; 
@@ -183,6 +181,16 @@
             padding: 4px 10px;
             border-radius: 6px;
             border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #user-avatar-small {
+            width: 30px;
+            height: px;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
         .settings-icon-btn {
@@ -284,7 +292,6 @@
             color: white; 
         }
 
-        /* Input Bar */
         .input-bar {
             padding: 20px 30px;
             background: white;
@@ -325,7 +332,6 @@
             box-shadow: 0 5px 15px rgba(71, 85, 105, 0.2); 
         }
 
-        /* Notification */
         #notif-container {
             position: fixed;
             bottom: 30px;
@@ -354,6 +360,190 @@
             font-size: 10px; 
             font-weight: bold;
         }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            width: 450px;
+            max-width: 90%;
+            padding: 30px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            color: var(--p-grey);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: 0.2s;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: var(--p-grey);
+            box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.1);
+        }
+
+        .avatar-preview {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--p-grey);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--p-yellow);
+            font-size: 40px;
+            font-weight: bold;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: 0.2s;
+            overflow: hidden;
+        }
+
+        .avatar-circle:hover {
+            transform: scale(1.05);
+        }
+
+        .avatar-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-cancel {
+            background: var(--sidebar-bg);
+            color: var(--text-dark);
+        }
+
+        .btn-cancel:hover {
+            background: var(--border);
+        }
+
+        .btn-save {
+            background: var(--p-grey);
+            color: var(--p-yellow);
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--success);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1100;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+		
+		
+		
     </style>
 </head>
 <body>
@@ -378,12 +568,18 @@
 
     <div class="chat-area">
         <div class="chat-header">
-            <div class="title">GLOBAL_COMM_CHANNEL</div>
-            <span id="user-display-name">ID: Loading...</span>
-            <button onclick="window.location.href='update.html'" class="settings-icon-btn">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                    <path d="M12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zm7.43-2.52l2.11 1.65c.19.15.24.42.12.64l-2 3.46c-.12.22-.39.3-.61.22l-2.49-1c-.52.4-1.08.73-1.69.98l-.38 2.65c-.03.24-.24.42-.49.42h-4c-.25 0-.46-.18-.49-.42l-.38-2.65c-.61-.25-1.17-.59-1.69-.98l-2.49 1c-.22.08-.49 0-.61-.22l-2-3.46c-.12-.22-.07-.49.12-.64l2.11-1.65c-.04-.32-.07-.65-.07-.98s.03-.66.07-.98l-2.11-1.65c-.19-.15-.24-.42-.12-.64l2-3.46c.12-.22.39-.3.61-.22l2.49 1c.52-.4 1.08-.73 1.69-.98l.38-2.65c.03-.24.24-.42.49-.42h4c.25 0 .46.18.49.42l.38 2.65c.61.25 1.17.59 1.69.98l2.49-1c.22.08-.49 0-.61.22l2 3.46c.12.22.07.49-.12.64l-2.11 1.65c.04.32.07.65.07.98s-.03.66-.07.98z"/>
-                </svg>
+            <div class="title" style="display:flex; align-items:center; gap:10px;">
+                <img id="header-avatar" style="display:none; width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid var(--border);">
+                GLOBAL_COMM_CHANNEL
+            </div>
+			
+			
+            <span id="user-display-name">
+                <img id="user-avatar-small" style="display:none;">
+                <span id="user-name-text">Loading...</span>
+            </span>
+            <button onclick="openProfileModal()" class="settings-icon-btn">
+                ⚙️
             </button>
         </div>
         
@@ -391,7 +587,7 @@
 
         <div class="input-bar">
             <input type="text" id="msg-input" placeholder="Type_Secure_Message..." autocomplete="off">
-            <button id="send-btn" onclick="send()">PUSH_DATA</button>
+            <button id="send-btn" onclick="send()">Send</button>
         </div>
     </div>
 
@@ -399,6 +595,56 @@
         <span id="notif-badge">0</span>
         <span style="font-size:20px;">✉️</span>
     </div>
+
+    <!-- MODAL MODIFICATION PROFIL -->
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>✏️ MODIFIER MON PROFIL</h2>
+                <button class="modal-close" onclick="closeProfileModal()">&times;</button>
+            </div>
+            
+            <div class="avatar-preview">
+                <div class="avatar-circle" id="avatarPreview" onclick="document.getElementById('avatarFile').click()">
+                    <span id="avatarInitials">NT</span>
+                    <img id="avatarImg" style="display: none;" alt="Avatar">
+                </div>
+            </div>
+            <input type="file" id="avatarFile" accept="image/*" style="display: none;" onchange="handleAvatarUpload(this)">
+
+            <div class="form-group">
+                <label>📝 Prénom</label>
+                <input type="text" id="profileFirstName" placeholder="Votre prénom">
+            </div>
+
+            <div class="form-group">
+                <label>📝 Nom</label>
+                <input type="text" id="profileLastName" placeholder="Votre nom">
+            </div>
+
+            <div class="form-group">
+                <label>📧 Email</label>
+                <input type="email" id="profileEmail" placeholder="votre@email.com">
+            </div>
+
+            <div class="form-group">
+                <label>🔒 Mot De Passe</label>
+                <input type="password" id="profilePassword" placeholder="Nouveau mot de passe (optionnel)">
+            </div>
+
+            <div class="form-group">
+                <label>🖼️ Avatar URL</label>
+                <input type="url" id="avatarUrlInput" placeholder="https://exemple.com/avatar.jpg" oninput="handleAvatarUrl(this.value)">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeProfileModal()">ANNULER</button>
+                <button class="btn-save" onclick="saveProfile()">ENREGISTRER</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">✅ Profil mis à jour !</div>
 
     <script>
         let stompClient = null;
@@ -410,7 +656,34 @@
         let lastRenderedSender = null;
         let lastRenderedGroup = null;
 
-        // ✅ Vérifier que l'user est connecté et approuvé par l'admin
+        // ========== FONCTIONS POUR LA GESTION DE L'AVATAR AVEC USER ID ==========
+        
+        // حفظ الصورة بـ userId
+        function saveAvatarWithUserId(avatarUrl) {
+            const userId = currentUser.id;
+            if (userId && avatarUrl) {
+                localStorage.setItem(`avatar_${userId}`, avatarUrl);
+                console.log('✅ Avatar saved for user:', userId);
+            }
+        }
+
+        // استرجاع الصورة بـ userId
+        function loadAvatarByUserId() {
+            const userId = currentUser.id;
+            if (userId) {
+                const savedAvatar = localStorage.getItem(`avatar_${userId}`);
+                if (savedAvatar && savedAvatar !== '') {
+                    currentUser.avatarUrl = savedAvatar;
+                    localStorage.setItem('userAvatarUrl', savedAvatar);
+                    console.log('✅ Avatar loaded for user:', userId);
+                    return true;
+                }
+            }
+            console.log('❌ No avatar found for user:', userId);
+            return false;
+        }
+
+        // معلومات المستخدم
         const storedEnabled = localStorage.getItem('userEnabled');
         if (!localStorage.getItem('chatUser')) {
             window.location.href = 'login.html';
@@ -419,42 +692,254 @@
             window.location.href = 'waiting.html';
         }
 
-        const currentUser = {
-            email:     (localStorage.getItem('chatUser')      || "").trim(),
+        let currentUser = {
+            id: localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : 1,
+            email: (localStorage.getItem('chatUser') || "").trim(),
             firstName: (localStorage.getItem('userFirstName') || "").trim(),
-            lastName:  (localStorage.getItem('userLastName')  || "").trim()
+            lastName: (localStorage.getItem('userLastName') || "").trim(),
+            avatarUrl: (localStorage.getItem('userAvatarUrl') || "").trim()
         };
-        const myFullName = `${currentUser.firstName} ${currentUser.lastName}`.trim();
-
-        document.getElementById('user-display-name').innerText = `ID: ${myFullName || "Unknown_Operator"}`;
-
-        // ✅ Vérifier si l'utilisateur est ADMIN (sans JWT)
-        const userRole = localStorage.getItem('userRole');
-        console.log('Chat page - User role:', userRole);
         
+        // استرجاع الصورة من userId عند تحميل الصفحة
+        loadAvatarByUserId();
+        
+        let myFullName = `${currentUser.firstName} ${currentUser.lastName}`.trim();
+        
+        // تحديث العرض
+        function updateUserDisplay() {
+            const nameSpan = document.getElementById('user-name-text');
+            const avatarImg = document.getElementById('user-avatar-small');
+            const headerAvatar = document.getElementById('header-avatar');
+            nameSpan.textContent = `ID: ${myFullName}`;
+            
+            if (currentUser.avatarUrl && currentUser.avatarUrl !== '') {
+                avatarImg.src = currentUser.avatarUrl;
+                avatarImg.style.display = 'inline-block';
+                avatarImg.style.width = '24px';
+                avatarImg.style.height = '24px';
+                avatarImg.style.borderRadius = '50%';
+                avatarImg.style.marginRight = '8px';
+                // تحديث الصورة قبل GLOBAL_COMM_CHANNEL
+                if (headerAvatar) {
+                    headerAvatar.src = currentUser.avatarUrl;
+                    headerAvatar.style.display = 'inline-block';
+                }
+                // حفظ الصورة بـ userId
+                saveAvatarWithUserId(currentUser.avatarUrl);
+            } else {
+                avatarImg.style.display = 'none';
+                if (headerAvatar) headerAvatar.style.display = 'none';
+            }
+        }
+        
+        updateUserDisplay();
+
+        // التحقق من دور المستخدم
+        const userRole = localStorage.getItem('userRole');
         if (userRole === 'ADMIN') {
             const adminBtn = document.getElementById('adminButtonContainer');
-            if (adminBtn) {
-                adminBtn.style.display = 'block';
-                console.log('✅ Admin button displayed');
-            }
-        } else {
-            console.log('❌ Admin button hidden - role:', userRole);
+            if (adminBtn) adminBtn.style.display = 'block';
         }
 
-        // ✅ Fonction de déconnexion
+        // ========== FONCTIONS DU MODAL ==========
+        
+        function openProfileModal() {
+            document.getElementById('profileFirstName').value = currentUser.firstName;
+            document.getElementById('profileLastName').value = currentUser.lastName;
+            document.getElementById('profileEmail').value = currentUser.email;
+            document.getElementById('profilePassword').value = '';
+            document.getElementById('avatarUrlInput').value = currentUser.avatarUrl || '';
+            
+            updateModalAvatarPreview();
+            document.getElementById('profileModal').classList.add('active');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        function updateModalAvatarPreview() {
+            const avatarImg = document.getElementById('avatarImg');
+            const avatarInitials = document.getElementById('avatarInitials');
+            const avatarUrl = currentUser.avatarUrl;
+            
+            if (avatarUrl && avatarUrl.trim() !== '') {
+                avatarImg.src = avatarUrl;
+                avatarImg.style.display = 'block';
+                avatarInitials.style.display = 'none';
+            } else {
+                const initials = `${currentUser.firstName.charAt(0)}${currentUser.lastName.charAt(0)}`.toUpperCase();
+                avatarInitials.textContent = initials || '??';
+                avatarInitials.style.display = 'flex';
+                avatarImg.style.display = 'none';
+            }
+        }
+
+        function handleAvatarUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const avatarUrl = e.target.result;
+                document.getElementById('avatarUrlInput').value = avatarUrl;
+                handleAvatarUrl(avatarUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleAvatarUrl(url) {
+            const avatarImg = document.getElementById('avatarImg');
+            const avatarInitials = document.getElementById('avatarInitials');
+            
+            if (url && url.trim() !== '') {
+                avatarImg.src = url;
+                avatarImg.style.display = 'block';
+                avatarInitials.style.display = 'none';
+            } else {
+                const firstName = document.getElementById('profileFirstName').value;
+                const lastName = document.getElementById('profileLastName').value;
+                const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+                avatarInitials.textContent = initials || '??';
+                avatarInitials.style.display = 'flex';
+                avatarImg.style.display = 'none';
+            }
+        }
+
+        // ========== FONCTION SAVE PROFILE AVEC PATCH ==========
+        async function saveProfile() {
+            // نجمع فقط الحقول اللي غيرها المستخدم
+            const updates = {};
+            
+            const newFirstName = document.getElementById('profileFirstName').value.trim();
+            const newLastName = document.getElementById('profileLastName').value.trim();
+            const newEmail = document.getElementById('profileEmail').value.trim();
+            const newPassword = document.getElementById('profilePassword').value;
+            const newAvatarUrl = document.getElementById('avatarUrlInput').value.trim();
+            
+            // نضيف فقط الحقول اللي تغيرت
+            if (newFirstName !== currentUser.firstName) {
+                updates.firstName = newFirstName;
+            }
+            if (newLastName !== currentUser.lastName) {
+                updates.lastName = newLastName;
+            }
+            if (newEmail !== currentUser.email) {
+                updates.email = newEmail;
+            }
+            if (newPassword && newPassword.trim() !== '') {
+                updates.password = newPassword;
+            }
+            if (newAvatarUrl !== currentUser.avatarUrl) {
+                updates.avatarUrl = newAvatarUrl;
+            }
+            
+            // إذا ما كاين حتى تعديل
+            if (Object.keys(updates).length === 0) {
+                showToast('Aucune modification détectée', 'info');
+                closeProfileModal();
+                return;
+            }
+            
+            try {
+                // استعمال PATCH بدل PUT
+                const response = await fetch(`/profile/${currentUser.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updates)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // تحديث localStorage فقط للحقول اللي تغيرت
+                    if (updates.firstName) localStorage.setItem('userFirstName', updates.firstName);
+                    if (updates.lastName) localStorage.setItem('userLastName', updates.lastName);
+                    if (updates.email) localStorage.setItem('chatUser', updates.email);
+                    if (updates.avatarUrl) {
+                        localStorage.setItem('userAvatarUrl', updates.avatarUrl);
+                        // حفظ الصورة بـ userId
+                        saveAvatarWithUserId(updates.avatarUrl);
+                    }
+                    
+                    // تحديث المتغيرات
+                    if (updates.firstName) currentUser.firstName = updates.firstName;
+                    if (updates.lastName) currentUser.lastName = updates.lastName;
+                    if (updates.email) currentUser.email = updates.email;
+                    if (updates.avatarUrl) currentUser.avatarUrl = updates.avatarUrl;
+                    
+                    myFullName = `${currentUser.firstName} ${currentUser.lastName}`.trim();
+                    
+                    // تحديث العرض
+                    updateUserDisplay();
+                    updateModalAvatarPreview();
+                    
+                    closeProfileModal();
+                    showToast('✅ ' + result.message, 'success');
+                    
+                    // تفريغ حقل كلمة السر
+                    document.getElementById('profilePassword').value = '';
+                    
+                    // إعادة تحميل الصفحة بعد 1.5 ثانية
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    const error = await response.json();
+                    showToast('❌ ' + error.error, 'error');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showToast('❌ Erreur de connexion au serveur', 'error');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = type === 'success' ? '#10b981' : '#dc2626';
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.style.background = '#10b981';
+            }, 3000);
+        }
+
+        // Fermer le modal en cliquant en dehors
+        document.getElementById('profileModal').addEventListener('click', function(e) {
+            if (e.target === this) closeProfileModal();
+        });
+
+        // ========== FONCTIONS CHAT ==========
+        
         function logout() {
-            if (stompClient && stompClient.connected) {
-                stompClient.disconnect();
+            // حفظ الصورة قبل الخروج بـ userId
+            if (currentUser.avatarUrl) {
+                saveAvatarWithUserId(currentUser.avatarUrl);
             }
-            if (privateClient && privateClient.connected) {
-                privateClient.disconnect();
+            
+            if (stompClient && stompClient.connected) stompClient.disconnect();
+            if (privateClient && privateClient.connected) privateClient.disconnect();
+            
+            // حفظ كل الصور المرتبطة بـ userId قبل المسح
+            const savedAvatars = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('avatar_')) {
+                    savedAvatars[key] = localStorage.getItem(key);
+                }
             }
+            
             localStorage.clear();
+            
+            // استرجاع الصور المحفوظة
+            for (const [key, value] of Object.entries(savedAvatars)) {
+                localStorage.setItem(key, value);
+            }
+            
             window.location.href = "login.html";
         }
 
-        // ✅ Fonction pour aller au panel admin
         function goToAdmin() {
             window.location.href = "admin.html";
         }
