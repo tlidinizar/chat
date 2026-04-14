@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>S.A.T - Private Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p-yellow: #ffcc00;
+            --p-black: #64748b;
+            --bg-main: #ffffff;
+            --sidebar-bg: #f8fafc;
+            --border: #e2e8f0;
+            --text-dark: #64748b;
+            --text-muted: #64748b;
+            --danger: #dc2626;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            background: var(--bg-main);
+            color: var(--text-dark);
+            background-image: radial-gradient(var(--border) 1px, transparent 0);
+            background-size: 30px 30px;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            background: var(--p-black);
+            color: var(--p-yellow);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .back-btn {
+            margin: 20px;
+            padding: 14px;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 600;
+            font-size: 13px;
+            transition: 0.2s;
+            display: block;
+        }
+        .back-btn:hover { background: var(--p-yellow); border-color: var(--p-yellow); color: black; }
+
+        #status {
+            padding: 0 24px 20px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- Main Chat Area --- */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .chat-header {
+            padding: 20px 30px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #target-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 18px;
+            text-transform: uppercase;
+        }
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* --- Message Bubbles --- */
+        .msg {
+            padding: 12px 18px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 70%;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+		.me {
+		    align-self: flex-end;
+		    background: #475569; /* هادا هو اللون الرمادي (Slate-700) */
+		    color: white;
+		    border-bottom-right-radius: 4px;
+		}
+		
+        .other {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-dark);
+            border-bottom-left-radius: 4px;
+        }
+
+        .sender-label {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: block;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .msg-time {
+            font-size: 10px;
+            opacity: 0.5;
+            display: block;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .msg-actions button {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: inherit;
+            padding: 2px 8px;
+            font-size: 10px;
+            margin-left: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono';
+        }
+
+        .other .msg-actions button { border-color: var(--border); color: var(--text-muted); }
+
+        /* --- Input Bar --- */
+        .input-bar {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        #msg-input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            outline: none;
+            background: var(--sidebar-bg);
+            transition: 0.2s;
+        }
+        #msg-input:focus { border-color: var(--p-yellow); background: white; }
+
+        .icon-btn {
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border);
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: 0.2s;
+        }
+        .icon-btn:hover:not(:disabled) { background: var(--p-yellow); border-color: var(--p-yellow); }
+
+		#send-btn {
+		    background: #475569; /* نفس الرمادي */
+		    color: var(--p-yellow);
+		    border: none;
+		    padding: 0 25px;
+		    height: 48px;
+		    border-radius: 12px;
+		    cursor: pointer;
+		    font-weight: 800;
+		    font-family: 'JetBrains Mono', monospace;
+		}
+
+        /* --- Recording & Blocks --- */
+        #recording-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 30px;
+            background: #fff1f2;
+            border-top: 1px solid #fecdd3;
+            color: var(--danger);
+            font-size: 13px;
+        }
+        .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        #block-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono';
+        }
+        .not-blocked { background: white; color: var(--text-dark); }
+        .blocked { background: var(--danger); color: white; border-color: var(--danger); }
+
+        .blocked-banner {
+            display: none;
+            background: #fee2e2;
+            color: var(--danger);
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        #notif-popup {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--p-yellow);
+            color: black;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            z-index: 10000;
+            font-family: 'JetBrains Mono';
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <span style="background: var(--p-yellow); color:black; padding: 2px 6px; border-radius:4px">SAT</span> PRIVATE_SESSION
+        </div>
+        <a href="chat.html" class="back-btn">← RETURN_TO_GLOBAL</a>
+        <div id="status">STATUS: CONNECTING...</div>
+    </div>
+
+    <div class="chat-area">
+        <div class="chat-header">
+            <span id="target-name">Chargement...</span>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <button id="block-btn" class="not-blocked" onclick="toggleBlock()">🚫 BLOCK_NODE</button>
+                <span style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono';">● ENCRYPTED</span>
+            </div>
+        </div>
+
+        <div class="blocked-banner" id="blocked-banner">
+            🚫 ACCESS_DENIED: You have blocked this user. Unblock to resume transmission.
+        </div>
+
+        <div id="messages"></div>
+
+        <div id="file-label" style="display:none; padding: 10px 30px; font-size: 11px; background: var(--p-yellow); color: black; font-weight: 700; border-top: 1px solid var(--border);"></div>
+
+        <div id="recording-bar">
+            <div class="rec-dot"></div>
+            <span style="font-family: 'JetBrains Mono'; font-weight: 700;">VOICE_RECORDING_IN_PROGRESS...</span>
+            <span id="rec-timer">0:00</span>
+            <button onclick="cancelRecording()" style="margin-left:auto; background:none; border:1px solid var(--danger); color:var(--danger); padding:2px 8px; border-radius:4px; cursor:pointer; font-size:10px;">CANCEL</button>
+        </div>
+
+        <div class="input-bar">
+            <button id="attach-btn" class="icon-btn" onclick="document.getElementById('file-input').click()" disabled title="Joindre un fichier">📎</button>
+            <input type="file" id="file-input" style="display: none;" onchange="updateFileLabel()">
+            
+            <button id="record-btn" class="icon-btn" disabled title="Enregistrer un vocal">🎤</button>
+            
+            <input type="text" id="msg-input" placeholder="Type private message..." disabled>
+            
+            <button id="send-btn" onclick="send()" disabled>SEND</button>
+        </div>
+    </div>
+
+    <div id="notif-popup" onclick="this.style.display='none'">
+        📩 NEW_INCOMING: <span id="notif-text"></span>
+    </div>
+
+    <script>
+        // --- JS Logic (Exactly as your original, but integrated) ---
+        let stompClient = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetName = decodeURIComponent(urlParams.get('name') || "Utilisateur");
+
+        const currentUser = {
+            firstName: (localStorage.getItem('userFirstName') || "").trim(),
+            lastName:  (localStorage.getItem('userLastName')  || "").trim()
+        };
+        const myFullName = (currentUser.firstName + " " + currentUser.lastName).trim();
+
+        document.getElementById('target-name').innerText = targetName;
+
+        function connect() {
+            const socket = new SockJS('http://localhost:8081/ws-chat?name=' + encodeURIComponent(myFullName));
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+
+            stompClient.connect({
+                login: myFullName,
+                firstName: currentUser.firstName,
+                lastName: currentUser.lastName
+            }, function onConnected() {
+                document.getElementById('status').innerText = "STATUS: ONLINE";
+                document.getElementById('msg-input').disabled = false;
+                document.getElementById('send-btn').disabled = false;
+                document.getElementById('attach-btn').disabled = false;
+                document.getElementById('record-btn').disabled = false;
+
+                stompClient.subscribe('/user/queue/messages', function (frame) {
+                    const data = JSON.parse(frame.body);
+                    const senderNorm = (data.sender || "").trim().toLowerCase();
+                    const targetNorm = (targetName || "").trim().toLowerCase();
+                    const receiverNorm = (data.receiver || "").trim().toLowerCase();
+                    const myNorm = (myFullName || "").trim().toLowerCase();
+
+                    const isFromTarget = senderNorm === targetNorm && receiverNorm === myNorm;
+                    const isMyUpdatedMsg = senderNorm === myNorm && (data.deleted || data.edited);
+                    const isMyNewMsg = senderNorm === myNorm && data.id && !data.deleted && !data.edited;
+
+                    if (isFromTarget || isMyUpdatedMsg || isMyNewMsg) showMsg(data);
+                });
+
+                stompClient.subscribe('/user/queue/notifications', function (frame) {
+                    document.getElementById('notif-text').innerText = frame.body.split('|')[0];
+                    const popup = document.getElementById('notif-popup');
+                    popup.style.display = 'block';
+                    setTimeout(() => popup.style.display = 'none', 5000);
+                });
+
+                loadHistory();
+                checkBlockStatus();
+            }, function onError() {
+                document.getElementById('status').innerText = "STATUS: OFFLINE (RETRYING...)";
+                setTimeout(connect, 5000);
+            });
+        }
+
+        function loadHistory() {
+            fetch('http://localhost:8081/api/history?user1=' + encodeURIComponent(myFullName) + '&user2=' + encodeURIComponent(targetName))
+                .then(r => r.json()).then(list => list.forEach(showMsg)).catch(() => {});
+        }
+
+        function updateFileLabel() {
+            const f = document.getElementById('file-input').files[0];
+            const label = document.getElementById('file-label');
+            if (f) { label.innerText = "📎 ATTACHED: " + f.name; label.style.display = 'block'; }
+            else { label.style.display = 'none'; }
+        }
+
+        async function send() {
+            const input = document.getElementById('msg-input');
+            const fileInput = document.getElementById('file-input');
+            const content = input.value.trim();
+            const file = fileInput.files[0];
+
+            if (isBlocked) { alert("Node blocked. Unblock to send."); return; }
+            if ((!content && !file) || !stompClient || !stompClient.connected) return;
+
+            let fileUrl = null; let fileName = null;
+
+            if (file) {
+                const formData = new FormData(); formData.append("file", file);
+                const res = await fetch('http://localhost:8081/api/upload', { method: 'POST', body: formData });
+                const result = await res.json();
+                fileUrl = result.fileUrl; fileName = result.fileName;
+            }
+
+            const msg = {
+                sender: myFullName, receiver: targetName,
+                firstName: currentUser.firstName, lastName: currentUser.lastName,
+                content: content, fileUrl: fileUrl, fileName: fileName,
+                audioUrl: null, timestamp: new Date().toISOString()
+            };
+            stompClient.send("/app/private-message", {}, JSON.stringify(msg));
+            input.value = ""; fileInput.value = ""; updateFileLabel();
+        }
+
+        function showMsg(data) {
+            if (!data) return;
+            const area = document.getElementById('messages');
+            let existingMsgDiv = document.getElementById('msg-' + data.id);
+            const isMe = data.sender === myFullName;
+            const name = isMe ? 'YOU' : targetName;
+            const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+
+            let contentHtml = '';
+            if (data.deleted) {
+                contentHtml = `<div style="font-style: italic; opacity:0.5;">🚫 MESSAGE_DELETED</div>`;
+            } else {
+                if (data.content) contentHtml += `<div>${escapeHtml(data.content)} ${data.edited ? '<small>(edited)</small>' : ''}</div>`;
+                if (data.audioUrl) {
+                    contentHtml += `<div class="vocal-container" style="background:${isMe?'rgba(255,255,255,0.1)':'#f1f5f9'}; padding:10px; border-radius:10px; margin-top:5px;">
+                        <audio controls style="height:30px; width:200px;"><source src="${data.audioUrl}" type="audio/webm"></audio>
+                    </div>`;
+                }
+                if (data.fileUrl && !data.audioUrl) {
+                    contentHtml += `<div style="margin-top:8px;"><a href="${data.fileUrl}" target="_blank" style="color:${isMe?'var(--p-yellow)':'var(--p-black)'}; font-weight:bold;">📎 ${data.fileName || 'FILE'}</a></div>`;
+                }
+            }
+
+            let actionsHtml = '';
+            if (isMe && !data.deleted && data.id) {
+                actionsHtml = `<div class="msg-actions">
+                    ${data.content ? `<button onclick="promptEdit(${data.id}, '${data.content.replace(/'/g, "\\'")}')">EDIT</button>` : ''}
+                    <button onclick="sendDelete(${data.id})">DEL</button>
+                </div>`;
+            }
+
+            const html = `<span class="sender-label">${name}</span>${contentHtml}${actionsHtml}<span class="msg-time">${time}</span>`;
+
+            if (existingMsgDiv) { existingMsgDiv.innerHTML = html; } 
+            else {
+                const div = document.createElement('div');
+                div.id = 'msg-' + data.id;
+                div.className = 'msg ' + (isMe ? 'me' : 'other');
+                div.innerHTML = html;
+                area.appendChild(div);
+            }
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function promptEdit(id, old) {
+            const n = prompt("Edit message:", old);
+            if (n && n !== old) stompClient.send("/app/private-edit", {}, JSON.stringify({ id: id.toString(), content: n, sender: myFullName }));
+        }
+
+        function sendDelete(id) {
+            if (confirm("Delete message?")) stompClient.send("/app/private-delete", {}, JSON.stringify({ id: id.toString(), sender: myFullName }));
+        }
+
+        // --- Vocal Logic ---
+        let mediaRecorder = null; let audioChunks = []; let isRecording = false; let recInterval = null;
+        const recordBtn = document.getElementById('record-btn');
+
+        recordBtn.onclick = () => { if (!isRecording) startRec(); else stopRec(true); };
+
+        async function startRec() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = async () => {
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                const formData = new FormData(); formData.append("file", blob, "vocal.webm");
+                const res = await fetch('http://localhost:8081/api/upload', { method: 'POST', body: formData });
+                const result = await res.json();
+                stompClient.send("/app/private-message", {}, JSON.stringify({
+                    sender: myFullName, receiver: targetName, audioUrl: result.fileUrl, timestamp: new Date().toISOString()
+                }));
+            };
+            mediaRecorder.start();
+            isRecording = true; document.getElementById('recording-bar').style.display = 'flex';
+            recordBtn.classList.add('recording'); recordBtn.innerText = "🛑";
+            let s = 0; recInterval = setInterval(() => { s++; document.getElementById('rec-timer').innerText = Math.floor(s/60)+":"+(s%60<10?'0':'')+s%60; }, 1000);
+        }
+
+        function stopRec(send) {
+            clearInterval(recInterval); isRecording = false;
+            document.getElementById('recording-bar').style.display = 'none';
+            recordBtn.classList.remove('recording'); recordBtn.innerText = "🎤";
+            if (send) mediaRecorder.stop(); else { mediaRecorder.onstop = null; mediaRecorder.stop(); }
+        }
+        function cancelRecording() { stopRec(false); }
+
+        // --- Block Logic ---
+        let isBlocked = false;
+        async function checkBlockStatus() {
+            const res = await fetch(`http://localhost:8081/api/block/check?blocker=${encodeURIComponent(myFullName)}&blocked=${encodeURIComponent(targetName)}`);
+            const data = await res.json(); isBlocked = data.blocked; updateBlockUI();
+        }
+        async function toggleBlock() {
+            const method = isBlocked ? 'DELETE' : 'POST';
+            await fetch(`http://localhost:8081/api/block?blocker=${encodeURIComponent(myFullName)}&blocked=${encodeURIComponent(targetName)}`, { method });
+            isBlocked = !isBlocked; updateBlockUI();
+        }
+        function updateBlockUI() {
+            const btn = document.getElementById('block-btn');
+            btn.className = isBlocked ? 'blocked' : 'not-blocked';
+            btn.innerText = isBlocked ? '✅ UNBLOCK_NODE' : '🚫 BLOCK_NODE';
+            document.getElementById('blocked-banner').style.display = isBlocked ? 'block' : 'none';
+        }
+
+        function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        document.getElementById('msg-input').onkeypress = e => { if (e.key === 'Enter') send(); };
+        
+        connect();
+    </script>
+</body>
+</html>

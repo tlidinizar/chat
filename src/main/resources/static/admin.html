@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>S.A.T - Admin Panel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p-yellow: #ffcc00;
+            --p-grey: #475569;
+            --bg-main: #ffffff;
+            --sidebar-bg: #f8fafc;
+            --border: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --danger: #dc2626;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-dark);
+            background-image: radial-gradient(var(--border) 1px, transparent 0);
+            background-size: 30px 30px;
+            min-height: 100vh;
+        }
+
+        .admin-header {
+            background: var(--p-grey);
+            color: var(--p-yellow);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .admin-header h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+
+        .admin-header h1 span {
+            background: var(--p-yellow);
+            color: var(--p-grey);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-header {
+            background: white;
+            color: var(--p-grey);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-header:hover {
+            background: var(--p-yellow);
+            transform: translateY(-2px);
+        }
+
+        .btn-logout {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-logout:hover {
+            background: #b91c1c;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-card h3 {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--p-grey);
+        }
+
+        .users-table-container {
+            background: white;
+            margin: 0 30px 30px 30px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .users-table th {
+            text-align: left;
+            padding: 15px 20px;
+            background: var(--sidebar-bg);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .users-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .users-table tr:hover {
+            background: var(--sidebar-bg);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .status-active {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background: var(--p-grey);
+            color: var(--p-yellow);
+        }
+
+        .role-user {
+            background: var(--sidebar-bg);
+            color: var(--text-muted);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            transition: 0.2s;
+        }
+
+        .btn-promote {
+            background: var(--p-grey);
+            color: var(--p-yellow);
+        }
+
+        .btn-promote:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-authorize {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-authorize:hover {
+            background: #059669;
+        }
+
+        .btn-refuse {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-refuse:hover {
+            background: #b91c1c;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--p-grey);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .refresh-btn {
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .refresh-btn:hover {
+            background: var(--p-yellow);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-header">
+        <h1>
+            <span>SAT</span> ADMIN CONTROL PANEL
+        </h1>
+        <div class="header-buttons">
+            <button class="btn-header refresh-btn" onclick="loadPendingUsers()">⟳ REFRESH</button>
+            <button class="btn-header" onclick="goToChat()">← CHAT</button>
+            <button class="btn-header btn-logout" onclick="logout()">🚪 LOGOUT</button>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>USERS PENDING</h3>
+            <div class="number" id="pending-count">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>TOTAL USERS</h3>
+            <div class="number" id="total-count">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>ACTIVE USERS</h3>
+            <div class="number" id="active-count">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>ADMINISTRATORS</h3>
+            <div class="number" id="admin-count">0</div>
+        </div>
+    </div>
+
+    <div class="users-table-container">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>FIRSTNAME</th>
+                    <th>LASTNAME</th>
+                    <th>EMAIL</th>
+                    <th>STATUS</th>
+                    <th>ROLE</th>
+                    <th>ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody id="users-table-body">
+                <tr class="loading">
+                    <td colspan="7">Loading users...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8081';
+        
+        // ✅ Vérifier si l'utilisateur est ADMIN - REDIRECTION
+        const userRole = localStorage.getItem('userRole');
+        console.log('Admin page - User role:', userRole);
+        
+        if (userRole !== 'ADMIN') {
+            console.log('Not admin, redirecting to chat.html');
+            window.location.href = 'chat.html';
+        }
+
+        // ✅ Fonction de déconnexion
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // ✅ Fonction pour retourner au chat
+        function goToChat() {
+            window.location.href = 'chat.html';
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+		// Remplacer loadPendingUsers par :
+		async function loadPendingUsers() {
+		    const tbody = document.getElementById('users-table-body');
+		    tbody.innerHTML = '<tr class="loading"><td colspan="7">Loading users...</td><\/tr>';
+		    
+		    try {
+		        // Charger TOUS les utilisateurs
+		        const response = await fetch(`${BASE_URL}/admin/pending`);
+		        
+		        if (!response.ok) {
+		            throw new Error(`HTTP error! status: ${response.status}`);
+		        }
+		        
+		        const allUsers = await response.json();
+		        
+		        // Afficher tous les utilisateurs (pas seulement les pending)
+		        displayUsers(allUsers);
+		        
+		        // Mettre à jour les stats avec tous les utilisateurs
+		        const pendingUsers = allUsers.filter(u => !(u.enabled || u.isEnabled));
+		        document.getElementById('pending-count').innerText = pendingUsers.length;
+		        document.getElementById('total-count').innerText = allUsers.length;
+		        
+		        const activeCount = allUsers.filter(u => u.enabled || u.isEnabled).length;
+		        document.getElementById('active-count').innerText = activeCount;
+		        
+		        const adminCount = allUsers.filter(u => u.role === 'ADMIN').length;
+		        document.getElementById('admin-count').innerText = adminCount;
+		        
+		    } catch (error) {
+		        console.error('Error loading users:', error);
+		        tbody.innerHTML = `<tr class="empty-state"><td colspan="7">Error loading users: ${error.message}</td><\/tr>`;
+		        showToast('Error loading users: ' + error.message, 'error');
+		    }
+		}
+
+        function displayUsers(users) {
+            const tbody = document.getElementById('users-table-body');
+            
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr class="empty-state"><td colspan="7">No pending users found</td><\/tr>';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                const isEnabled = user.enabled || user.isEnabled;
+                const role = user.role || 'USER';
+                
+                row.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${escapeHtml(user.firstname || user.firstName || '')}</td>
+                    <td>${escapeHtml(user.lastname || user.lastName || '')}</td>
+                    <td>${escapeHtml(user.mail || user.email || '')}</td>
+                    <td>
+                        <span class="status-badge ${isEnabled ? 'status-active' : 'status-pending'}">
+                            ${isEnabled ? 'ACTIVE' : 'PENDING'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="role-badge ${role === 'ADMIN' ? 'role-admin' : 'role-user'}">
+                            ${role}
+                        </span>
+                    </td>
+                    <td class="action-buttons">
+                        ${role !== 'ADMIN' ? `
+                            <button class="btn-action btn-promote" onclick="promoteToAdmin(${user.id})">
+                                👑 PROMOTE
+                            </button>
+                        ` : ''}
+                        ${!isEnabled ? `
+                            <button class="btn-action btn-authorize" onclick="authorizeUser(${user.id})">
+                                ✓ AUTHORIZE
+                            </button>
+                        ` : ''}
+                        <button class="btn-action btn-refuse" onclick="refuseUser(${user.id})">
+                            ✗ DELETE
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function updateStats(users) {
+            try {
+                const pendingCount = users.filter(u => !(u.enabled || u.isEnabled)).length;
+                document.getElementById('pending-count').innerText = pendingCount;
+                
+                const allUsersResponse = await fetch(`${BASE_URL}/admin/pending`);
+                
+                if (allUsersResponse.ok) {
+                    const allUsers = await allUsersResponse.json();
+                    document.getElementById('total-count').innerText = allUsers.length;
+                    
+                    const activeCount = allUsers.filter(u => u.enabled || u.isEnabled).length;
+                    document.getElementById('active-count').innerText = activeCount;
+                    
+                    const adminCount = allUsers.filter(u => u.role === 'ADMIN').length;
+                    document.getElementById('admin-count').innerText = adminCount;
+                }
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        async function promoteToAdmin(id) {
+            if (!confirm('Are you sure you want to promote this user to ADMIN?')) return;
+            
+            try {
+                const response = await fetch(`${BASE_URL}/admin/promote/${id}`, {
+                    method: 'PUT'
+                });
+                
+                if (response.ok) {
+                    showToast(`User ${id} promoted to ADMIN successfully!`);
+                    loadPendingUsers();
+                } else {
+                    const error = await response.text();
+                    showToast(`Error: ${error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function authorizeUser(id) {
+            if (!confirm('Are you sure you want to authorize this user?')) return;
+            
+            try {
+                const response = await fetch(`${BASE_URL}/admin/authorize/${id}`, {
+                    method: 'PUT'
+                });
+                
+                if (response.ok) {
+                    showToast(`User ${id} authorized successfully!`);
+                    loadPendingUsers();
+                } else {
+                    const error = await response.text();
+                    showToast(`Error: ${error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function refuseUser(id) {
+            if (!confirm('Are you sure you want to DELETE this user? This action cannot be undone!')) return;
+            
+            try {
+                const response = await fetch(`${BASE_URL}/admin/refuse/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showToast(`User ${id} deleted successfully!`);
+                    loadPendingUsers();
+                } else {
+                    const error = await response.text();
+                    showToast(`Error: ${error}`, 'error');
+                }
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialisation
+        loadPendingUsers();
+        
+        // Rafraîchir toutes les 30 secondes
+        setInterval(() => {
+            loadPendingUsers();
+        }, 30000);
+    </script>
+</body>
+</html>

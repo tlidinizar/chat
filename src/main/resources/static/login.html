@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>S.A.T - System Access</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p-yellow: #ffcc00;
+            --p-black: #1a1a1a;
+            --bg-white: #ffffff;
+            --input-bg: #f8fafc;
+            --border: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { 
+            background-color: var(--bg-white); 
+            color: var(--text-dark); 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0;
+            background-image: radial-gradient(var(--border) 1px, transparent 0);
+            background-size: 30px 30px;
+        }
+
+        .box { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 24px; 
+            width: 380px; 
+            border: 1px solid var(--border); 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 35px;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            background: var(--p-yellow);
+            padding: 2px 10px;
+            border-radius: 6px;
+            margin-right: 5px;
+        }
+
+        h2 { 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            color: var(--text-muted); 
+            margin-bottom: 25px; 
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .field { margin-bottom: 20px; }
+
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border); 
+            background: var(--input-bg); 
+            color: var(--text-dark); 
+            outline: none; 
+            font-family: 'Inter', sans-serif;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--p-yellow);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.1);
+        }
+
+        button { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--p-black); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer; 
+            transition: 0.3s;
+            margin-top: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            background: #333;
+        }
+
+        .footer { 
+            text-align: center; 
+            margin-top: 25px; 
+            font-size: 13px; 
+            color: var(--text-muted); 
+        }
+
+        .footer a { 
+            color: var(--p-black); 
+            text-decoration: none; 
+            font-weight: 700; 
+            border-bottom: 2px solid var(--p-yellow);
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="logo"><span>S.A.T</span> NODE</div>
+        
+        <h2>Establish_Secure_Session</h2>
+        
+        <div class="field">
+            <input type="email" id="l-email" placeholder="Operator_Email" required>
+        </div>
+        <div class="field">
+            <input type="password" id="l-pass" placeholder="Security_Password" required>
+        </div>
+        
+        <button onclick="handleLogin()">AUTHENTICATE</button>
+        
+        <div class="footer">
+            New operator? <a href="inscription.html">Register_Node</a>
+        </div>
+    </div>
+
+<script>
+    async function handleLogin() {
+        const email = document.getElementById('l-email').value;
+        const password = document.getElementById('l-pass').value;
+
+        if (!email || !password) {
+            alert("REQUIRED: Enter credentials");
+            return;
+        }
+
+        const data = { mail: email, password: password };
+
+        try {
+            const res = await fetch('http://localhost:8081/auth/login', {
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                const userFromDB = await res.json(); 
+                console.log("Data received from DB:", userFromDB);
+
+                const fName   = userFromDB.firstName  || userFromDB.firstname  || userFromDB.FIRSTNAME;
+                const lName   = userFromDB.lastName   || userFromDB.lastname   || userFromDB.LASTNAME;
+                const uMail   = userFromDB.mail       || userFromDB.MAIL;
+                const role    = userFromDB.role       || userFromDB.ROLE || 'USER';
+                const userId  = userFromDB.id;
+                // ✅ Récupérer le statut enabled
+                const enabled = userFromDB.enabled !== undefined ? userFromDB.enabled : true;
+
+                localStorage.setItem('userFirstName', fName);
+                localStorage.setItem('userLastName',  lName);
+                localStorage.setItem('chatUser',      uMail);
+                localStorage.setItem('userRole',      role);
+                localStorage.setItem('userId',        userId);
+                localStorage.setItem('userEnabled',   enabled);
+
+                console.log('✅ Role stored:', role, '| Enabled:', enabled);
+
+                // ✅ Si compte pas encore approuvé → message d'attente
+                if (!enabled) {
+                    localStorage.clear();
+                    alert("⏳ ACCESS PENDING\n\nYour account is awaiting admin approval.\nPlease try again later.");
+                } else {
+                    window.location.href = "chat.html";
+                }
+
+            } else { 
+                alert("ACCESS_DENIED: Invalid credentials"); 
+            }
+        } catch (error) {
+            console.error("Erreur:", error);
+            alert("CRITICAL_ERROR: Backend unreachable");
+        }
+    }
+
+    document.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') { handleLogin(); }
+    });
+</script>
+</body>
+</html>

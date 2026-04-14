@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>S.A.T - Node Registration</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p-yellow: #ffcc00;
+            --p-black: #1a1a1a;
+            --bg-white: #ffffff;
+            --input-bg: #f8fafc;
+            --border: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { 
+            background-color: var(--bg-white); 
+            color: var(--text-dark); 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0;
+            /* الشبكة الهندسية في الخلفية */
+            background-image: radial-gradient(var(--border) 1px, transparent 0);
+            background-size: 30px 30px;
+        }
+
+        .box { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 24px; 
+            width: 420px; 
+            border: 1px solid var(--border); 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 22px;
+            text-align: center;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            background: var(--p-yellow);
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-right: 5px;
+        }
+
+        h2 { 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: var(--text-muted); 
+            margin-bottom: 25px; 
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .field-group { margin-bottom: 15px; }
+
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border); 
+            background: var(--input-bg); 
+            color: var(--text-dark); 
+            outline: none; 
+            font-family: 'Inter', sans-serif;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--p-yellow);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.1);
+        }
+
+        button { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--p-black); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer; 
+            transition: 0.3s;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #333;
+        }
+
+        .link { text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted); }
+        .link a { color: var(--p-black); text-decoration: none; font-weight: 700; }
+        .link a:hover { text-decoration: underline; }
+
+        #msg { 
+            text-align: center; 
+            padding: 12px; 
+            margin-top: 20px; 
+            border-radius: 10px; 
+            display: none; 
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* ستايل واجهة التأكيد */
+        #verify-ui p {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="logo"><span>S.A.T</span> SYSTEM</div>
+        
+        <div id="reg-ui">
+            <h2>Initialize_New_Node</h2>
+            <div class="field-group"><input type="text" id="fn" placeholder="First_Name"></div>
+            <div class="field-group"><input type="text" id="ln" placeholder="Last_Name"></div>
+            <div class="field-group"><input type="email" id="email" placeholder="Mail_Address (Gmail)"></div>
+            <div class="field-group"><input type="password" id="pass" placeholder="Security_Password"></div>
+            <div class="field-group"><input type="password" id="conf" placeholder="Confirm_Password"></div>
+            <button onclick="handleRegister()">REGISTER_NODE</button>
+            <div class="link">Already active? <a href="login.html">Access_Terminal</a></div>
+        </div>
+
+        <div id="verify-ui" style="display: none;">
+            <h2>Secure_Identity_Check</h2>
+            <p>A verification code has been transmitted to your email. Enter the 6-digit sequence below.</p>
+            <input type="text" id="v-code" placeholder="000000" style="text-align: center; font-size: 20px; letter-spacing: 5px; font-family: 'JetBrains Mono';">
+            <button onclick="handleVerify()" style="background: var(--p-yellow); color: var(--p-black);">VERIFY_SESSION</button>
+        </div>
+
+        <div id="msg"></div>
+    </div>
+
+    <script>
+        let savedEmail = "";
+
+        function showStatus(text, isError) {
+            const m = document.getElementById('msg');
+            m.style.display = "block";
+            m.innerText = text;
+            m.style.backgroundColor = isError ? "#fff1f2" : "#f0fdf4";
+            m.style.color = isError ? "#e11d48" : "#16a34a";
+            m.style.border = isError ? "1px solid #fda4af" : "1px solid #86efac";
+        }
+
+        async function handleRegister() {
+            savedEmail = document.getElementById('email').value;
+            const data = {
+                firstname: document.getElementById('fn').value,
+                lastname: document.getElementById('ln').value,
+                mail: savedEmail,
+                password: document.getElementById('pass').value,
+                confirme_password: document.getElementById('conf').value
+            };
+
+            try {
+                const res = await fetch('http://localhost:8081/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const txt = await res.text();
+                
+                if (txt.includes("SUCCESS")) {
+                    document.getElementById('reg-ui').style.display = 'none';
+                    document.getElementById('verify-ui').style.display = 'block';
+                    showStatus("Node Request Sent! Check your mailbox.", false);
+                } else {
+                    showStatus(txt, true);
+                }
+            } catch (err) {
+                showStatus("CRITICAL_ERROR: Backend node unreachable (8081)", true);
+            }
+        }
+
+        async function handleVerify() {
+            const code = document.getElementById('v-code').value;
+            try {
+                const res = await fetch(`http://localhost:8081/auth/verify?email=${encodeURIComponent(savedEmail)}&code=${code}`, {
+                    method: 'POST'
+                });
+                const txt = await res.text();
+                
+                if (txt.includes("Successfully")) {
+                    alert("IDENTITY VERIFIED. Session established.");
+                    window.location.href = "login.html";
+                } else {
+                    showStatus("INVALID_CODE: Access Denied.", true);
+                }
+            } catch (err) {
+                showStatus("CONNECTION_FAILURE", true);
+            }
+        }
+    </script>
+</body>
+</html>

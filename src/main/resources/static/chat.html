@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>S.A.T - Global Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p-yellow: #ffcc00;
+            --p-grey: #475569;
+            --bg-main: #ffffff;
+            --sidebar-bg: #f8fafc;
+            --border: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --danger: #dc2626;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            background: var(--bg-main);
+            color: var(--text-dark);
+            background-image: radial-gradient(var(--border) 1px, transparent 0);
+            background-size: 30px 30px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            background: var(--p-grey);
+            color: var(--p-yellow);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-header span {
+            background: var(--p-yellow);
+            color: var(--p-grey);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        #online-users-list { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+        }
+
+        .user-item { 
+            padding: 12px 16px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            transition: 0.2s; 
+            margin-bottom: 6px;
+            border: 1px solid transparent;
+            position: relative;
+        }
+        .user-item:hover { 
+            background: var(--sidebar-bg); 
+            border-color: var(--border);
+        }
+
+        .status-dot { 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            flex-shrink: 0;
+        }
+        .status-dot.online {
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .user-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .unread-count {
+            background: #ef4444;
+            color: white;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Sidebar Footer */
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-sidebar {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .btn-admin {
+            background: var(--p-grey);
+            color: var(--p-yellow);
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-logout {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-logout:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+        }
+
+        /* Main Chat Area */
+        .chat-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            background: rgba(255, 255, 255, 0.8); 
+            backdrop-filter: blur(4px); 
+        }
+
+        .chat-header { 
+            padding: 20px 30px; 
+            background: white; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        .chat-header .title {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        #user-display-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            background: var(--sidebar-bg);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .settings-icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            transition: 0.2s;
+        }
+
+        .settings-icon-btn:hover {
+            background: var(--sidebar-bg);
+        }
+
+        #messages { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 30px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+        }
+
+        .msg { 
+            padding: 12px 18px; 
+            border-radius: 16px; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            position: relative; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02); 
+        }
+
+        .msg-group { 
+            display: flex; 
+            flex-direction: column; 
+            max-width: 70%; 
+        }
+        .msg-group.me { 
+            align-self: flex-end; 
+            align-items: flex-end; 
+        }
+        .msg-group.other { 
+            align-self: flex-start; 
+            align-items: flex-start; 
+        }
+
+        .msg-group.me .msg { 
+            background: var(--p-grey); 
+            color: white; 
+            border-bottom-right-radius: 4px; 
+        }
+
+        .msg-group.other .msg { 
+            background: white; 
+            border: 1px solid var(--border); 
+            color: var(--text-dark);
+            border-bottom-left-radius: 4px; 
+        }
+
+        .sender-label { 
+            font-size: 11px; 
+            font-weight: 700; 
+            margin-bottom: 4px; 
+            color: var(--text-muted); 
+            font-family: 'JetBrains Mono', monospace; 
+        }
+
+        .deleted-msg { 
+            font-style: italic; 
+            opacity: 0.7; 
+        }
+        .edited-tag { 
+            font-size: 10px; 
+            margin-left: 5px; 
+            opacity: 0.6; 
+        }
+
+        .msg-actions { 
+            margin-top: 4px; 
+            display: flex; 
+            gap: 8px; 
+        }
+        .msg-actions button {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono';
+            transition: 0.2s;
+        }
+        .msg-actions button:hover { 
+            background: var(--p-grey); 
+            color: white; 
+        }
+
+        /* Input Bar */
+        .input-bar {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        #msg-input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            outline: none;
+            background: var(--sidebar-bg);
+            transition: 0.2s;
+        }
+        #msg-input:focus { 
+            border-color: var(--p-grey); 
+            background: white; 
+        }
+
+        #send-btn {
+            background: var(--p-grey); 
+            color: var(--p-yellow);
+            border: none;
+            padding: 0 30px;
+            height: 48px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            transition: 0.3s;
+        }
+        #send-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(71, 85, 105, 0.2); 
+        }
+
+        /* Notification */
+        #notif-container {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 100;
+            border: 1px solid var(--border);
+        }
+
+        #notif-badge {
+            position: absolute; 
+            top: -5px; 
+            right: -5px; 
+            background: #ef4444; 
+            color: white; 
+            border-radius: 50%; 
+            padding: 2px 6px; 
+            font-size: 10px; 
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <span>SAT</span> ACTIVE_USERS
+        </div>
+        <div id="online-users-list"></div>
+
+        <div class="sidebar-footer">
+            <div id="adminButtonContainer" style="display: none;">
+                <button class="btn-sidebar btn-admin" onclick="goToAdmin()">
+                    👑 ADMIN PANEL
+                </button>
+            </div>
+            <button class="btn-sidebar btn-logout" onclick="logout()">
+                🚪 DÉCONNEXION
+            </button>
+        </div>
+    </div>
+
+    <div class="chat-area">
+        <div class="chat-header">
+            <div class="title">GLOBAL_COMM_CHANNEL</div>
+            <span id="user-display-name">ID: Loading...</span>
+            <button onclick="window.location.href='update.html'" class="settings-icon-btn">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                    <path d="M12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zm7.43-2.52l2.11 1.65c.19.15.24.42.12.64l-2 3.46c-.12.22-.39.3-.61.22l-2.49-1c-.52.4-1.08.73-1.69.98l-.38 2.65c-.03.24-.24.42-.49.42h-4c-.25 0-.46-.18-.49-.42l-.38-2.65c-.61-.25-1.17-.59-1.69-.98l-2.49 1c-.22.08-.49 0-.61-.22l-2-3.46c-.12-.22-.07-.49.12-.64l2.11-1.65c-.04-.32-.07-.65-.07-.98s.03-.66.07-.98l-2.11-1.65c-.19-.15-.24-.42-.12-.64l2-3.46c.12-.22.39-.3.61-.22l2.49 1c.52-.4 1.08-.73 1.69-.98l.38-2.65c.03-.24.24-.42.49-.42h4c.25 0 .46.18.49.42l.38 2.65c.61.25 1.17.59 1.69.98l2.49-1c.22.08-.49 0-.61.22l2 3.46c.12.22.07.49-.12.64l-2.11 1.65c.04.32.07.65.07.98s-.03.66-.07.98z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div id="messages"></div>
+
+        <div class="input-bar">
+            <input type="text" id="msg-input" placeholder="Type_Secure_Message..." autocomplete="off">
+            <button id="send-btn" onclick="send()">PUSH_DATA</button>
+        </div>
+    </div>
+
+    <div id="notif-container" onclick="goToPrivate()">
+        <span id="notif-badge">0</span>
+        <span style="font-size:20px;">✉️</span>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let privateClient = null;
+        let lastSenderName = "";
+        let currentOnlineUsers = [];
+        let unreadMessages = {};
+        let totalUnread = 0;
+        let lastRenderedSender = null;
+        let lastRenderedGroup = null;
+
+        // ✅ Vérifier que l'user est connecté et approuvé par l'admin
+        const storedEnabled = localStorage.getItem('userEnabled');
+        if (!localStorage.getItem('chatUser')) {
+            window.location.href = 'login.html';
+        }
+        if (storedEnabled === 'false') {
+            window.location.href = 'waiting.html';
+        }
+
+        const currentUser = {
+            email:     (localStorage.getItem('chatUser')      || "").trim(),
+            firstName: (localStorage.getItem('userFirstName') || "").trim(),
+            lastName:  (localStorage.getItem('userLastName')  || "").trim()
+        };
+        const myFullName = `${currentUser.firstName} ${currentUser.lastName}`.trim();
+
+        document.getElementById('user-display-name').innerText = `ID: ${myFullName || "Unknown_Operator"}`;
+
+        // ✅ Vérifier si l'utilisateur est ADMIN (sans JWT)
+        const userRole = localStorage.getItem('userRole');
+        console.log('Chat page - User role:', userRole);
+        
+        if (userRole === 'ADMIN') {
+            const adminBtn = document.getElementById('adminButtonContainer');
+            if (adminBtn) {
+                adminBtn.style.display = 'block';
+                console.log('✅ Admin button displayed');
+            }
+        } else {
+            console.log('❌ Admin button hidden - role:', userRole);
+        }
+
+        // ✅ Fonction de déconnexion
+        function logout() {
+            if (stompClient && stompClient.connected) {
+                stompClient.disconnect();
+            }
+            if (privateClient && privateClient.connected) {
+                privateClient.disconnect();
+            }
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        // ✅ Fonction pour aller au panel admin
+        function goToAdmin() {
+            window.location.href = "admin.html";
+        }
+
+        function connect() {
+            const headers = { 
+                login: currentUser.email, 
+                firstName: currentUser.firstName, 
+                lastName: currentUser.lastName 
+            };
+            const socket = new SockJS('http://localhost:8081/ws-chat');
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+
+            stompClient.connect(headers, () => {
+                stompClient.subscribe('/topic/online-users', (res) => {
+                    currentOnlineUsers = JSON.parse(res.body);
+                    updateOnlineList(currentOnlineUsers);
+                });
+                stompClient.subscribe('/topic/messages', (msg) => showMsg(JSON.parse(msg.body)));
+                stompClient.send("/app/getOnlineUsers", {}, {});
+            }, () => setTimeout(connect, 5000));
+
+            const wsPrivate = new SockJS('http://localhost:8081/ws-chat?name=' + encodeURIComponent(myFullName));
+            privateClient = Stomp.over(wsPrivate);
+            privateClient.debug = null;
+            privateClient.connect(headers, () => {
+                privateClient.subscribe('/user/queue/notifications', (frame) => {
+                    let sender = "";
+                    try {
+                        const parts = frame.body.split('|');
+                        sender = parts[1] ? parts[1].trim() : parts[0].replace('Nouveau message de ', '').trim();
+                    } catch(e) {
+                        sender = frame.body.trim();
+                    }
+                    
+                    if (sender && sender !== myFullName) {
+                        unreadMessages[sender] = (unreadMessages[sender] || 0) + 1;
+                        totalUnread = Object.values(unreadMessages).reduce((a, b) => a + b, 0);
+                        lastSenderName = sender;
+                        updateOnlineList(currentOnlineUsers);
+                        document.getElementById('notif-container').style.display = 'flex';
+                        document.getElementById('notif-badge').innerText = totalUnread;
+                    }
+                });
+            });
+        }
+
+        function send() {
+            const input = document.getElementById('msg-input');
+            if (!input.value.trim() || !stompClient) return;
+            stompClient.send("/app/sendMessage", {}, JSON.stringify({
+                sender: myFullName, 
+                firstName: currentUser.firstName, 
+                lastName: currentUser.lastName,
+                content: input.value.trim(), 
+                type: 'CHAT', 
+                timestamp: new Date()
+            }));
+            input.value = "";
+        }
+
+        function showMsg(data) {
+            const area = document.getElementById('messages');
+            const isMe = data.sender === myFullName;
+            const side = isMe ? 'me' : 'other';
+            const senderKey = data.sender || `${data.firstName} ${data.lastName}`;
+
+            const existingBubble = document.getElementById('bubble-' + data.id);
+            if (existingBubble) {
+                existingBubble.querySelector('.content-text').innerHTML = data.deleted ? 
+                    '<span class="deleted-msg">Message_Deleted_By_User</span>' : 
+                    `${escapeHtml(data.content)}${data.edited ? '<span class="edited-tag">(edited)</span>' : ''}`;
+                return;
+            }
+
+            if (lastRenderedSender !== senderKey) {
+                lastRenderedGroup = document.createElement('div');
+                lastRenderedGroup.className = `msg-group ${side}`;
+                if (!isMe) lastRenderedGroup.innerHTML = `<span class="sender-label">${escapeHtml(senderKey)}</span>`;
+                area.appendChild(lastRenderedGroup);
+                lastRenderedSender = senderKey;
+            }
+
+            const bubbleWrap = document.createElement('div');
+            bubbleWrap.style.display = "flex";
+            bubbleWrap.style.flexDirection = "column";
+            bubbleWrap.style.alignItems = isMe ? "flex-end" : "flex-start";
+
+            const bubble = document.createElement('div');
+            bubble.id = 'bubble-' + data.id;
+            bubble.className = 'msg';
+            bubble.innerHTML = `<div class="content-text">${data.deleted ? '<span class="deleted-msg">Message_Deleted_By_User</span>' : escapeHtml(data.content) + (data.edited ? '<span class="edited-tag">(edited)</span>' : '')}</div>`;
+            
+            bubbleWrap.appendChild(bubble);
+
+            if (isMe && !data.deleted && data.id) {
+                const actions = document.createElement('div');
+                actions.className = 'msg-actions';
+                actions.innerHTML = `<button onclick="promptEdit(${data.id}, '${(data.content || '').replace(/'/g, "\\'")}')">Edit</button>
+                                     <button onclick="sendDelete(${data.id})">Delete</button>`;
+                bubbleWrap.appendChild(actions);
+            }
+
+            lastRenderedGroup.appendChild(bubbleWrap);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function promptEdit(id, oldContent) {
+            const newContent = prompt("Update Command:", oldContent);
+            if (newContent && newContent.trim() !== oldContent && stompClient) {
+                stompClient.send("/app/editMessage", {}, JSON.stringify({ 
+                    id: id.toString(), 
+                    content: newContent.trim(), 
+                    sender: myFullName 
+                }));
+            }
+        }
+
+        function sendDelete(id) {
+            if (confirm("Confirm_Deletion?") && stompClient) {
+                stompClient.send("/app/deleteMessage", {}, JSON.stringify({ 
+                    id: id.toString(), 
+                    sender: myFullName 
+                }));
+            }
+        }
+
+        function updateOnlineList(fullNames) {
+            const list = document.getElementById('online-users-list');
+            list.innerHTML = '';
+            const users = [...new Set(fullNames)].filter(name => name !== myFullName);
+            
+            users.forEach(name => {
+                const unreadCount = unreadMessages[name] || 0;
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                div.onclick = () => {
+                    if (unreadMessages[name]) {
+                        delete unreadMessages[name];
+                        totalUnread = Object.values(unreadMessages).reduce((a, b) => a + b, 0);
+                        if (totalUnread === 0) {
+                            document.getElementById('notif-container').style.display = 'none';
+                        }
+                        document.getElementById('notif-badge').innerText = totalUnread;
+                        updateOnlineList(fullNames);
+                    }
+                    openPrivateChat(name);
+                };
+                div.innerHTML = `
+                    <div class="status-dot online"></div>
+                    <span class="user-name">${escapeHtml(name)}</span>
+                    ${unreadCount > 0 ? `<span class="unread-count">${unreadCount}</span>` : ''}
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function openPrivateChat(name) {
+            window.location.href = `chat_private.html?name=${encodeURIComponent(name)}`;
+        }
+
+        function goToPrivate() { 
+            if (lastSenderName) openPrivateChat(lastSenderName); 
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.getElementById("msg-input").addEventListener("keypress", (e) => { 
+            if (e.key === "Enter") send(); 
+        });
+        
+        connect();
+    </script>
+</body>
+</html>

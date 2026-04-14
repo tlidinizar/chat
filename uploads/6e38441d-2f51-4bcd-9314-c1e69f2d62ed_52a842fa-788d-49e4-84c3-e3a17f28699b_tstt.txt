@@ -1,0 +1,8 @@
+HELO example.ma
+MAIL FROM:<user1@example.ma>
+RCPT TO:<user2@example.ma>
+DATA
+Subject: Message Success 
+message envoie avec succes chez user2.
+.
+QUIT

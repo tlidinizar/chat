@@ -1,0 +1,22 @@
+Step 1 – Stage / Project (الشركة)
+خدم على feature جديد
+ما تعرفش logic → سول ChatGPT يشرح ليك
+ChatGPT يعطيك code → قراو line by line
+حاول تربط logic + flow + code
+Example: Client → Interceptor → Server → Broadcast
+Print statements باش تشوف effect كل خطوة
+حاول تفهم cause → effect قبل ما تغير الكود
+Step 2 – Practice فالدار (30–45min)
+Recall / Flow diagram (10–15min)
+ترسم flow صغير لكل feature
+
+Example:
+
+Client → Interceptor → Server → Broadcast
+Mini Practice (20–30min)
+استعمل نفس code من ChatGPT
+جرب تغييرات صغيرة:
+print statements
+param مختلف
+add/remove logic بسيطة
+هدفك: تشوف كيفاش كل خطوة كتأثر فالflow
